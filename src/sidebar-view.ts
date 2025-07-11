@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, moment, TFile } from "obsidian";
 import {
 	VIEW_TYPE_HABIT_TRACKER,
 	TIME_SPANS,
@@ -184,11 +184,16 @@ export class HabitSidebarView extends ItemView {
 
 		dateRange.forEach((date) => {
 			const indicator = timelineRow.createDiv("timeline-indicator");
-			const value = this.habitData[date]?.[habit.propertyName];
+			const value = this.habitData[date]?.habits[habit.propertyName];
+			const filePath = this.habitData[date]?.filePath;
+
+			// Add click functionality to open daily note
+			indicator.style.cursor = "pointer";
+			indicator.onclick = () => this.openDailyNote(date, filePath);
 
 			if (value === null || value === undefined) {
 				indicator.addClass("missing");
-				indicator.title = `${date}: No data`;
+				indicator.title = `${date}: No data - Click to open note`;
 			} else if (habit.widget === "checkbox") {
 				const boolValue = value as boolean;
 				const targetIsChecked = (habit.target || 1) === 1;
@@ -196,11 +201,14 @@ export class HabitSidebarView extends ItemView {
 
 				if (isSuccess) {
 					indicator.addClass("success");
-					indicator.title = `${date}: ${boolValue ? "✓" : "✗"} `;
+					indicator.title = `${date}: ${
+						boolValue ? "✓" : "✗"
+					} - Click to open note`;
 				} else {
 					indicator.addClass("failure");
-					indicator.title = `${date}: ${boolValue ? "✓" : "✗"}`;
-					// (target: ${targetIsChecked ? "checked" : "unchecked"})`;
+					indicator.title = `${date}: ${
+						boolValue ? "✓" : "✗"
+					} - Click to open note`;
 				}
 			} else if (habit.widget === "number" && habit.target) {
 				const numValue = value as number;
@@ -214,7 +222,7 @@ export class HabitSidebarView extends ItemView {
 					indicator.addClass("failure");
 				}
 
-				indicator.title = `${date}: ${numValue}/${habit.target}`;
+				indicator.title = `${date}: ${numValue}/${habit.target} - Click to open note`;
 			}
 		});
 
@@ -257,5 +265,63 @@ export class HabitSidebarView extends ItemView {
 		this.plugin.settings.selectedTimeSpan = timeSpanKey;
 		await this.plugin.saveSettings();
 		await this.refresh();
+	}
+
+	private async openDailyNote(date: string, filePath?: string) {
+		if (filePath) {
+			// File exists, open it
+			const file = this.app.vault.getAbstractFileByPath(filePath);
+			if (file && file instanceof TFile) {
+				await this.app.workspace.getLeaf().openFile(file as TFile);
+			}
+		}
+		/** else {
+			// File doesn't exist, create it
+			const settings = this.plugin.settings;
+			const [year, month, day] = date.split("-");
+			const momentDate = moment(`${year}-${month}-${day}`);
+			const expectedPath = `${settings.baseDirectory}/${momentDate.format(
+				settings.dateFormatPattern
+			)}.md`;
+
+			try {
+				// Create the file with basic frontmatter
+				await this.app.vault.create(expectedPath, "---\n\n---\n\n");
+				const file = this.app.vault.getAbstractFileByPath(expectedPath);
+				if (file) {
+					await this.app.workspace.getLeaf().openFile(file as any);
+				}
+			} catch (error) {
+				console.error("Failed to create daily note:", error);
+				// Try to create parent directories if they don't exist
+				const pathParts = expectedPath.split("/");
+				let currentPath = "";
+				for (let i = 0; i < pathParts.length - 1; i++) {
+					currentPath += pathParts[i];
+					try {
+						await this.app.vault.createFolder(currentPath);
+					} catch (e) {
+						// Folder might already exist, ignore error
+					}
+					currentPath += "/";
+				}
+				// Try creating the file again
+				try {
+					await this.app.vault.create(expectedPath, "---\n\n---\n\n");
+					const file =
+						this.app.vault.getAbstractFileByPath(expectedPath);
+					if (file) {
+						await this.app.workspace
+							.getLeaf()
+							.openFile(file as any);
+					}
+				} catch (finalError) {
+					console.error(
+						"Failed to create daily note after creating directories:",
+						finalError
+					);
+				}
+			}
+		} */
 	}
 }

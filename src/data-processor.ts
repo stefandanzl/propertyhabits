@@ -42,11 +42,15 @@ export class HabitDataProcessor {
 
 		while (current.isSameOrBefore(end)) {
 			const dateStr = current.format("YYYY-MM-DD");
-			habitData[dateStr] = {};
+
+			habitData[dateStr] = {
+				filePath: undefined,
+				habits: {}
+			};
 
 			// Initialize all tracked habits as null (missing)
 			this.settings.trackedHabits.forEach((habit) => {
-				habitData[dateStr][habit.propertyName] = null;
+				habitData[dateStr].habits[habit.propertyName] = null;
 			});
 
 			current.add(1, "day");
@@ -64,6 +68,11 @@ export class HabitDataProcessor {
 				const metadata = this.app.metadataCache.getFileCache(file);
 				if (!metadata?.frontmatter) continue;
 
+				// Store the file path for this date
+				if (habitData[dateStr]) {
+					habitData[dateStr].filePath = filePath;
+				}
+
 				// Process each tracked habit
 				for (const habit of this.settings.trackedHabits) {
 					const rawValue = metadata.frontmatter[habit.propertyName];
@@ -73,7 +82,7 @@ export class HabitDataProcessor {
 					);
 
 					if (habitData[dateStr]) {
-						habitData[dateStr][habit.propertyName] = processedValue;
+						habitData[dateStr].habits[habit.propertyName] = processedValue;
 					}
 				}
 			} catch (error) {

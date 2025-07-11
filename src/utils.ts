@@ -102,7 +102,7 @@ export function calculateHabitStats(
 	// Calculate from most recent to oldest for current streak
 	for (let i = dateRange.length - 1; i >= 0; i--) {
 		const date = dateRange[i];
-		const value = habitData[date]?.[habitName];
+		const value = habitData[date]?.habits[habitName];
 
 		let isSuccess = false;
 

@@ -19,10 +19,13 @@ export interface PluginSettings {
 	refreshInterval: number;
 }
 
+export interface DayData {
+	filePath?: string;
+	habits: { [habitName: string]: boolean | number | null };
+}
+
 export interface HabitData {
-	[date: string]: {
-		[habitName: string]: boolean | number | null;
-	};
+	[date: string]: DayData;
 }
 
 export interface HabitStats {
