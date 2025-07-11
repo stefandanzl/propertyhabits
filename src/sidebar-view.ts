@@ -142,7 +142,7 @@ export class HabitSidebarView extends ItemView {
 
 		const stats = this.calculateStats(habit);
 		const statsEl = header.createDiv("habit-stats");
-		console.log(stats.successRate);
+		// console.log(stats.successRate);
 		statsEl.addClass(getSuccessClass(stats.successRate));
 
 		if (habit.widget === "checkbox") {
@@ -246,9 +246,7 @@ export class HabitSidebarView extends ItemView {
 	}
 
 	private calculateStats(habitConfig: HabitConfig): HabitStats {
-		console.log("VORHER", habitConfig, this.habitData); // HIER IST ES FALSCH!!!!
 		const stats = calculateHabitStats(this.habitData, habitConfig);
-		console.log(stats);
 		return stats;
 	}
 

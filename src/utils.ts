@@ -82,13 +82,12 @@ export function calculateHabitStats(
 	const dailySuccessResults: boolean[] = new Array(habitData.length);
 
 	// First pass: calculate daily success/failure going forward
-	console.log(`[DEBUG] Calculating stats for habit: ${habitName}`);
 	for (let i = 0; i < habitData.length; i++) {
 		const value = habitData[i]?.habits[habitName];
-		const date = habitData[i]?.date;
+		// const date = habitData[i]?.date;
 		let isSuccess = false;
-		
-		console.log(`[DEBUG] Day ${i} (${date}): value=${value}`);
+
+		// console.log(`[DEBUG] Day ${i} (${date}): value=${value}`);
 
 		// if (value !== null && value !== undefined) {
 		if (value !== null && value !== undefined) {
@@ -118,7 +117,7 @@ export function calculateHabitStats(
 		}
 
 		dailySuccessResults[i] = isSuccess;
-		console.log(`[DEBUG] Day ${i} (${date}): isSuccess=${isSuccess}`);
+		// console.debug(`[DEBUG] Day ${i} (${date}): isSuccess=${isSuccess}`);
 		if (isSuccess) {
 			successfulDays++;
 		}

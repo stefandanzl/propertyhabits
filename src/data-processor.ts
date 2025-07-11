@@ -69,7 +69,6 @@ export class HabitDataProcessor {
 
 							currHabits[habit.propertyName] = processedValue;
 						}
-						console.log(expectedPath, "processedValue", currHabits);
 					}
 				} catch (error) {
 					handleError(`Error processing file ${expectedPath}`, error);
@@ -85,7 +84,6 @@ export class HabitDataProcessor {
 
 			current.add(1, "day");
 		}
-		console.log(">> HabitData", habitData);
 		// this.plugin.habitData = habitData; // Store in plugin for later use
 		return habitData;
 	}
