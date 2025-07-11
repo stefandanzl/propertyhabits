@@ -33,9 +33,9 @@ export default class HabitTrackerPlugin extends Plugin {
 		);
 
 		// Add ribbon icon
-		this.addRibbonIcon("calendar-check", "Habit Tracker", () => {
+		/** this.addRibbonIcon("calendar-check", "Habit Tracker", () => {
 			this.activateView();
-		});
+		}); */
 
 		// Register settings tab
 		this.addSettingTab(new HabitSettingsTab(this.app, this));

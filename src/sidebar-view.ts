@@ -33,6 +33,10 @@ export class HabitSidebarView extends ItemView {
 		return "Habit Tracker";
 	}
 
+	getIcon(): string {
+		return "calendar-check"; // Use a suitable icon for habit tracking
+	}
+
 	async onOpen() {
 		await this.refresh();
 	}
