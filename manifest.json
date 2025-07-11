@@ -1,0 +1,10 @@
+{
+	"id": "property2habit",
+	"name": "Property to Habit",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Track daily habits from your daily note properties with visual progress indicators and streak tracking.",
+	"author": "Your Name",
+	"authorUrl": "https://github.com/yourusername",
+	"isDesktopOnly": false
+}

@@ -1,0 +1,12 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+    VAULT: C:\\PROJECTS\\Obsidian\\dev9\\.obsidian\\plugins\\propertyhabits
+
+tasks:
+    default:
+        cmds:
+            - npm run build
+            - cp main.js "{{.VAULT}}\\main.js"
