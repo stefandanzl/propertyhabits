@@ -8,6 +8,7 @@ export class AddHabitModal extends Modal {
 	onSubmit: (result: HabitConfig) => void;
 	dataProcessor: HabitDataProcessor;
 	plugin: HabitTrackerPlugin;
+	displayElement: Setting | null = null;
 
 	selectedProperty = "";
 	displayName = "";
@@ -66,6 +67,16 @@ export class AddHabitModal extends Modal {
 					);
 				});
 
+				// Set initial selection to first item
+				if (untrackedProperties.length > 0) {
+					this.selectedProperty = untrackedProperties[0].name;
+					this.displayName = untrackedProperties[0].name;
+					dropdown.setValue(untrackedProperties[0].name);
+					this.displayElement?.addText;
+				}
+
+				this.refreshDisplayName();
+
 				dropdown.onChange((value) => {
 					this.selectedProperty = value;
 					this.displayName = value;
@@ -75,7 +86,7 @@ export class AddHabitModal extends Modal {
 			});
 
 		// Display name
-		new Setting(this.contentEl)
+		this.displayElement = new Setting(this.contentEl)
 			.setName("Display Name")
 			.setDesc("How this habit will appear in the tracker")
 			.addText((text) => {

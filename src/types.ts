@@ -3,7 +3,7 @@
 export interface HabitConfig {
 	propertyName: string;
 	displayName: string;
-	widget: 'checkbox' | 'number';
+	widget: "checkbox" | "number";
 	target?: number;
 	isTotal: boolean;
 	order: number;
@@ -47,7 +47,7 @@ export const TIME_SPANS: TimeSpanOption[] = [
 	{ label: "7 Days", days: 7, key: "week" },
 	{ label: "21 Days", days: 21, key: "21days" },
 	{ label: "30 Days", days: 30, key: "month" },
-	{ label: "90 Days", days: 90, key: "quarter" }
+	// { label: "90 Days", days: 90, key: "quarter" }
 ];
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -56,7 +56,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	selectedTimeSpan: "21days",
 	trackedHabits: [],
 	showStreaks: true,
-	refreshInterval: 1000
+	refreshInterval: 1000,
 };
 
 export const VIEW_TYPE_HABIT_TRACKER = "habit-tracker-view";

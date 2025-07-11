@@ -1,8 +1,17 @@
-import { ItemView, WorkspaceLeaf, Notice } from 'obsidian';
-import { VIEW_TYPE_HABIT_TRACKER, TIME_SPANS, HabitData, HabitStats } from './types';
-import { HabitDataProcessor } from './data-processor';
-import { calculateHabitStats, getSuccessClass, formatNumericHabit } from './utils';
-import type HabitTrackerPlugin from './main';
+import { ItemView, WorkspaceLeaf, Notice } from "obsidian";
+import {
+	VIEW_TYPE_HABIT_TRACKER,
+	TIME_SPANS,
+	HabitData,
+	HabitStats,
+} from "./types";
+import { HabitDataProcessor } from "./data-processor";
+import {
+	calculateHabitStats,
+	getSuccessClass,
+	formatNumericHabit,
+} from "./utils";
+import type HabitTrackerPlugin from "./main";
 
 export class HabitSidebarView extends ItemView {
 	plugin: HabitTrackerPlugin;
@@ -34,14 +43,16 @@ export class HabitSidebarView extends ItemView {
 
 	async refresh() {
 		if (this.isLoading) return;
-		
+
 		this.isLoading = true;
 		try {
-			this.habitData = await this.dataProcessor.extractHabitData(this.plugin.settings.selectedTimeSpan);
+			this.habitData = await this.dataProcessor.extractHabitData(
+				this.plugin.settings.selectedTimeSpan
+			);
 			this.render();
 		} catch (error) {
-			console.error('[Habit Tracker] Error refreshing data:', error);
-			new Notice('Error loading habit data');
+			console.error("[Habit Tracker] Error refreshing data:", error);
+			new Notice("Error loading habit data");
 		} finally {
 			this.isLoading = false;
 		}
@@ -50,7 +61,7 @@ export class HabitSidebarView extends ItemView {
 	private render() {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass('habit-tracker-view');
+		contentEl.addClass("habit-tracker-view");
 
 		// Header
 		this.renderHeader(contentEl);
@@ -60,7 +71,7 @@ export class HabitSidebarView extends ItemView {
 
 		// Active habits
 		const activeHabits = this.plugin.settings.trackedHabits
-			.filter(habit => !habit.ignored)
+			.filter((habit) => !habit.ignored)
 			.sort((a, b) => a.order - b.order);
 
 		if (activeHabits.length === 0) {
@@ -71,18 +82,18 @@ export class HabitSidebarView extends ItemView {
 	}
 
 	private renderHeader(container: HTMLElement) {
-		const header = container.createDiv('habit-tracker-header');
-		const title = header.createDiv('habit-tracker-title');
-		title.setText('Habit Tracker');
+		const header = container.createDiv("habit-tracker-header");
+		const title = header.createDiv("habit-tracker-title");
+		title.setText("Habit Tracker");
 	}
 
 	private renderTimeSpanSelector(container: HTMLElement) {
-		const selector = container.createDiv('timespan-selector');
-		
-		TIME_SPANS.forEach(span => {
-			const button = selector.createEl('button', 'timespan-button');
+		const selector = container.createDiv("timespan-selector");
+
+		TIME_SPANS.forEach((span) => {
+			const button = selector.createEl("button", "timespan-button");
 			if (span.key === this.plugin.settings.selectedTimeSpan) {
-				button.addClass('active');
+				button.addClass("active");
 			}
 			button.setText(span.label);
 			button.onclick = () => this.switchTimeSpan(span.key);
@@ -90,116 +101,138 @@ export class HabitSidebarView extends ItemView {
 	}
 
 	private renderEmptyState(container: HTMLElement) {
-		const emptyState = container.createDiv('empty-state');
-		const icon = emptyState.createDiv('empty-state-icon');
-		icon.setText('📊');
-		
-		const title = emptyState.createDiv('empty-state-title');
-		title.setText('No habits configured');
-		
+		const emptyState = container.createDiv("empty-state");
+		const icon = emptyState.createDiv("empty-state-icon");
+		icon.setText("📊");
+
+		const title = emptyState.createDiv("empty-state-title");
+		title.setText("No habits configured");
+
 		const description = emptyState.createDiv();
-		description.setText('Go to Settings → Habit Tracker to add habits to track.');
+		description.setText(
+			"Go to Settings → Habit Tracker to add habits to track."
+		);
 	}
 
 	private renderHabits(container: HTMLElement, habits: any[]) {
-		const timeSpan = TIME_SPANS.find(ts => ts.key === this.plugin.settings.selectedTimeSpan);
+		const timeSpan = TIME_SPANS.find(
+			(ts) => ts.key === this.plugin.settings.selectedTimeSpan
+		);
 		if (!timeSpan) return;
 
 		const dateRange = this.generateDateRange(timeSpan.days);
 
-		habits.forEach(habit => {
+		habits.forEach((habit) => {
 			this.renderHabitSection(container, habit, dateRange);
 		});
 	}
 
-	private renderHabitSection(container: HTMLElement, habit: any, dateRange: string[]) {
-		const section = container.createDiv('habit-section');
-		
+	private renderHabitSection(
+		container: HTMLElement,
+		habit: any,
+		dateRange: string[]
+	) {
+		const section = container.createDiv("habit-section");
+
 		// Header
-		const header = section.createDiv('habit-header');
-		const title = header.createDiv('habit-title');
+		const header = section.createDiv("habit-header");
+		const title = header.createDiv("habit-title");
 		title.setText(habit.displayName);
-		
+
 		const stats = this.calculateStats(habit, dateRange);
-		const statsEl = header.createDiv('habit-stats');
+		const statsEl = header.createDiv("habit-stats");
+		console.log(stats.successRate);
 		statsEl.addClass(getSuccessClass(stats.successRate));
-		
-		if (habit.widget === 'checkbox') {
-			const targetText = (habit.target === 0) ? 'unchecked' : 'checked';
-			statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%) - target: ${targetText}`);
-		} else if (habit.widget === 'number' && habit.target) {
+
+		if (habit.widget === "checkbox") {
+			const targetText = habit.target === 0 ? "unchecked" : "checked";
+			statsEl.setText(
+				`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%) - target: ${targetText}`
+			);
+		} else if (habit.widget === "number" && habit.target) {
 			if (habit.isTotal) {
-				statsEl.setText(`Total: ${stats.totalValue}/${habit.target} (${stats.targetAchievement}%)`);
+				statsEl.setText(
+					`Total: ${stats.totalValue}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`
+				);
 			} else {
-				const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : '0';
-				statsEl.setText(`Avg: ${avgDisplay}/${habit.target} (${stats.targetAchievement}%)`);
+				const avgDisplay = stats.averageValue
+					? stats.averageValue.toFixed(1)
+					: "0";
+				statsEl.setText(
+					`Avg: ${avgDisplay}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`
+				);
 			}
 		}
 
 		// Timeline
-		const timeline = section.createDiv('habit-timeline');
+		const timeline = section.createDiv("habit-timeline");
 		this.renderTimeline(timeline, habit, dateRange);
-		
+
 		// Streak info
 		if (this.plugin.settings.showStreaks && stats.currentStreak > 0) {
-			const streakEl = timeline.createDiv('habit-stats');
+			const streakEl = timeline.createDiv("habit-stats");
 			streakEl.setText(`Current streak: ${stats.currentStreak} days`);
 		}
 	}
 
-	private renderTimeline(container: HTMLElement, habit: any, dateRange: string[]) {
-		const timelineRow = container.createDiv('timeline-row');
-		
-		dateRange.forEach(date => {
-			const indicator = timelineRow.createDiv('timeline-indicator');
+	private renderTimeline(
+		container: HTMLElement,
+		habit: any,
+		dateRange: string[]
+	) {
+		const timelineRow = container.createDiv("timeline-row");
+
+		dateRange.forEach((date) => {
+			const indicator = timelineRow.createDiv("timeline-indicator");
 			const value = this.habitData[date]?.[habit.propertyName];
-			
+
 			if (value === null || value === undefined) {
-				indicator.addClass('missing');
+				indicator.addClass("missing");
 				indicator.title = `${date}: No data`;
-			} else if (habit.widget === 'checkbox') {
+			} else if (habit.widget === "checkbox") {
 				const boolValue = value as boolean;
 				const targetIsChecked = (habit.target || 1) === 1;
 				const isSuccess = boolValue === targetIsChecked;
-				
+
 				if (isSuccess) {
-					indicator.addClass('success');
-					indicator.title = `${date}: ${boolValue ? '✓' : '✗'} (target: ${targetIsChecked ? 'checked' : 'unchecked'})`;
+					indicator.addClass("success");
+					indicator.title = `${date}: ${boolValue ? "✓" : "✗"} `;
 				} else {
-					indicator.addClass('failure');
-					indicator.title = `${date}: ${boolValue ? '✓' : '✗'} (target: ${targetIsChecked ? 'checked' : 'unchecked'})`;
+					indicator.addClass("failure");
+					indicator.title = `${date}: ${boolValue ? "✓" : "✗"}`;
+					// (target: ${targetIsChecked ? "checked" : "unchecked"})`;
 				}
-			} else if (habit.widget === 'number' && habit.target) {
+			} else if (habit.widget === "number" && habit.target) {
 				const numValue = value as number;
 				const percentage = (numValue / habit.target) * 100;
-				
+
 				if (percentage >= 100) {
-					indicator.addClass('success');
+					indicator.addClass("success");
 				} else if (percentage >= 50) {
-					indicator.addClass('partial');
+					indicator.addClass("partial");
 				} else {
-					indicator.addClass('failure');
+					indicator.addClass("failure");
 				}
-				
+
 				indicator.title = `${date}: ${numValue}/${habit.target}`;
 			}
 		});
 
 		// Progress bar for numeric habits
-		if (habit.widget === 'number' && habit.target) {
-			const progressBar = container.createDiv('progress-bar');
-			const progressFill = progressBar.createDiv('progress-fill');
-			
+		if (habit.widget === "number" && habit.target) {
+			const progressBar = container.createDiv("progress-bar");
+			const progressFill = progressBar.createDiv("progress-fill");
+
 			const stats = this.calculateStats(habit, dateRange);
 			const percentage = stats.targetAchievement || 0;
-			
+
 			progressFill.style.width = `${Math.min(percentage, 100)}%`;
-			
-			if (percentage >= 90) progressFill.addClass('success-high');
-			else if (percentage >= 75) progressFill.addClass('success-medium');
-			else if (percentage >= 50) progressFill.addClass('success-partial');
-			else if (percentage >= 25) progressFill.addClass('success-low');
-			else progressFill.addClass('success-poor');
+
+			if (percentage >= 90) progressFill.addClass("success-high");
+			else if (percentage >= 75) progressFill.addClass("success-medium");
+			else if (percentage >= 50) progressFill.addClass("success-partial");
+			else if (percentage >= 25) progressFill.addClass("success-low");
+			else progressFill.addClass("success-poor");
 		}
 	}
 
@@ -210,13 +243,13 @@ export class HabitSidebarView extends ItemView {
 	private generateDateRange(days: number): string[] {
 		const dates: string[] = [];
 		const current = new Date();
-		
+
 		for (let i = days - 1; i >= 0; i--) {
 			const date = new Date();
 			date.setDate(current.getDate() - i);
-			dates.push(date.toISOString().split('T')[0]);
+			dates.push(date.toISOString().split("T")[0]);
 		}
-		
+
 		return dates;
 	}
 
