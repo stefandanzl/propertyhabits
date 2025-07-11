@@ -4,6 +4,7 @@ import {
 	TIME_SPANS,
 	HabitData,
 	HabitStats,
+	HabitConfig,
 } from "./types";
 import { HabitDataProcessor } from "./data-processor";
 import {
@@ -16,7 +17,7 @@ import type HabitTrackerPlugin from "./main";
 export class HabitSidebarView extends ItemView {
 	plugin: HabitTrackerPlugin;
 	dataProcessor: HabitDataProcessor;
-	habitData: HabitData = {};
+	habitData: HabitData = [];
 	isLoading = false;
 
 	constructor(leaf: WorkspaceLeaf, plugin: HabitTrackerPlugin) {
@@ -186,18 +187,18 @@ export class HabitSidebarView extends ItemView {
 	) {
 		const timelineRow = container.createDiv("timeline-row");
 
-		dateRange.forEach((date) => {
+		this.habitData.forEach((day) => {
 			const indicator = timelineRow.createDiv("timeline-indicator");
-			const value = this.habitData[date]?.habits[habit.propertyName];
-			const filePath = this.habitData[date]?.filePath;
+			const value = day?.habits[habit.propertyName];
+			const filePath = day?.filePath;
 
 			// Add click functionality to open daily note
 			indicator.style.cursor = "pointer";
-			indicator.onclick = () => this.openDailyNote(date, filePath);
+			indicator.onclick = () => this.openDailyNote(day.date, filePath);
 
 			if (value === null || value === undefined) {
 				indicator.addClass("missing");
-				indicator.title = `${date}: No data - Click to open note`;
+				indicator.title = `${day.date}: No data - Click to open note`;
 			} else if (habit.widget === "checkbox") {
 				const boolValue = value as boolean;
 				const targetIsChecked = (habit.target || 1) === 1;
@@ -205,12 +206,12 @@ export class HabitSidebarView extends ItemView {
 
 				if (isSuccess) {
 					indicator.addClass("success");
-					indicator.title = `${date}: ${
+					indicator.title = `${day.date}: ${
 						boolValue ? "✓" : "✗"
 					} - Click to open note`;
 				} else {
 					indicator.addClass("failure");
-					indicator.title = `${date}: ${
+					indicator.title = `${day.date}: ${
 						boolValue ? "✓" : "✗"
 					} - Click to open note`;
 				}
@@ -226,7 +227,7 @@ export class HabitSidebarView extends ItemView {
 					indicator.addClass("failure");
 				}
 
-				indicator.title = `${date}: ${numValue}/${habit.target} - Click to open note`;
+				indicator.title = `${day.date}: ${numValue}/${habit.target} - Click to open note`;
 			}
 		});
 
@@ -248,8 +249,11 @@ export class HabitSidebarView extends ItemView {
 		}
 	}
 
-	private calculateStats(habit: any, dateRange: string[]): HabitStats {
-		return calculateHabitStats(this.habitData, habit, dateRange);
+	private calculateStats(
+		habitConfig: HabitConfig,
+		dateRange: string[]
+	): HabitStats {
+		return calculateHabitStats(this.habitData, habitConfig, dateRange);
 	}
 
 	private generateDateRange(days: number): string[] {

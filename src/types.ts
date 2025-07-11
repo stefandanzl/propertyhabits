@@ -19,14 +19,18 @@ export interface PluginSettings {
 	refreshInterval: number;
 }
 
-export interface DayData {
-	filePath?: string;
-	habits: { [habitName: string]: boolean | number | null };
+export interface Habits {
+	[habitName: string]: boolean | number | null;
 }
 
-export interface HabitData {
-	[date: string]: DayData;
+export interface DayData {
+	date: string;
+	filePath: string;
+	exists: boolean;
+	habits: Habits;
 }
+
+export type HabitData = Array<DayData>;
 
 export interface HabitStats {
 	habitName: string;

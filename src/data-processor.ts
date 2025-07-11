@@ -1,9 +1,16 @@
 import { App, moment, TAbstractFile, TFile } from "obsidian";
-import { HabitConfig, HabitData, PluginSettings, TIME_SPANS } from "./types";
+import {
+	HabitConfig,
+	HabitData,
+	PluginSettings,
+	TIME_SPANS,
+	DayData,
+	Habits,
+} from "./types";
 import {
 	handleError,
 	processPropertyValue,
-	getFilesInDateRange,
+	generateDailyNotePath,
 } from "./utils";
 
 export class HabitDataProcessor {
@@ -19,102 +26,74 @@ export class HabitDataProcessor {
 		const timeSpan = TIME_SPANS.find((ts) => ts.key === timeSpanKey);
 		if (!timeSpan) {
 			handleError(`Invalid timespan: ${timeSpanKey}`);
-			return {};
+			return [];
 		}
 
 		const endDate = new Date();
 		const startDate = new Date();
 		startDate.setDate(endDate.getDate() - timeSpan.days + 1);
 
-		const allFiles = this.app.vault.getFiles();
-		const relevantFiles = getFilesInDateRange(
-			startDate,
-			endDate,
-			this.settings,
-			allFiles
-		);
-
-		const habitData: HabitData = {};
-
-		// Initialize dates with null values for missing files
+		// const filePaths: string[] = [];
 		const current = moment(startDate);
 		const end = moment(endDate);
 
+		const habitData: HabitData = [];
+
+		// Initialize all tracked habits as null (missing)
+		const defaultHabits: Habits = {};
+		this.settings.trackedHabits.forEach((habit) => {
+			defaultHabits[habit.propertyName] = null;
+		});
+
 		while (current.isSameOrBefore(end)) {
+			const expectedPath = generateDailyNotePath(
+				current.toDate(),
+				this.settings
+			);
+			// filePaths.push(expectedPath);
 			const dateStr = current.format("YYYY-MM-DD");
 
-			habitData[dateStr] = {
-				filePath: undefined,
-				habits: {}
-			};
+			const fileHandler = this.app.vault.getFileByPath(expectedPath);
 
-			// Initialize all tracked habits as null (missing)
-			this.settings.trackedHabits.forEach((habit) => {
-				habitData[dateStr].habits[habit.propertyName] = null;
+			const currHabits = defaultHabits;
+
+			let fileExists = false;
+			if (fileHandler && fileHandler instanceof TFile) {
+				fileExists = true;
+
+				try {
+					const metadata =
+						this.app.metadataCache.getFileCache(fileHandler);
+					if (metadata?.frontmatter) {
+						// Process each tracked habit
+						for (const habit of this.settings.trackedHabits) {
+							const rawValue =
+								metadata.frontmatter[habit.propertyName];
+							const processedValue = processPropertyValue(
+								habit.widget,
+								rawValue
+							);
+
+							currHabits[habit.propertyName] = processedValue;
+						}
+						console.log(expectedPath, "processedValue", currHabits);
+					}
+				} catch (error) {
+					handleError(`Error processing file ${expectedPath}`, error);
+				}
+			}
+
+			habitData.push({
+				date: dateStr,
+				filePath: expectedPath,
+				exists: fileExists,
+				habits: currHabits,
 			});
 
 			current.add(1, "day");
 		}
-
-		// Process existing files
-		for (const filePath of relevantFiles) {
-			const file = allFiles.find((f) => f.path === filePath);
-			if (!file) continue;
-
-			try {
-				const dateStr = this.extractDateFromPath(filePath);
-				if (!dateStr) continue;
-
-				const metadata = this.app.metadataCache.getFileCache(file);
-				if (!metadata?.frontmatter) continue;
-
-				// Store the file path for this date
-				if (habitData[dateStr]) {
-					habitData[dateStr].filePath = filePath;
-				}
-
-				// Process each tracked habit
-				for (const habit of this.settings.trackedHabits) {
-					const rawValue = metadata.frontmatter[habit.propertyName];
-					const processedValue = processPropertyValue(
-						habit.widget,
-						rawValue
-					);
-
-					if (habitData[dateStr]) {
-						habitData[dateStr].habits[habit.propertyName] = processedValue;
-					}
-				}
-			} catch (error) {
-				handleError(`Error processing file ${filePath}`, error);
-			}
-		}
-
+		console.log("HabitData", habitData);
 		return habitData;
-	}
-
-	private extractDateFromPath(filePath: string): string | null {
-		try {
-			// Remove base directory and .md extension
-			const relativePath = filePath
-				.replace(`${this.settings.baseDirectory}/`, "")
-				.replace(".md", "");
-
-			// Try to parse the date using the configured format
-			const parsedDate = moment(
-				relativePath,
-				this.settings.dateFormatPattern,
-				true
-			);
-
-			if (parsedDate.isValid()) {
-				return parsedDate.format("YYYY-MM-DD");
-			}
-		} catch (error) {
-			handleError(`Could not extract date from path: ${filePath}`, error);
-		}
-
-		return null;
 	}
 
 	getAvailableProperties(): Array<{ name: string; type: string }> {
@@ -156,7 +135,7 @@ export class HabitDataProcessor {
 	isRelevantDailyNote(file: TFile): boolean {
 		return (
 			file.path.startsWith(this.settings.baseDirectory) &&
-			file.path.endsWith(".md")
+			file.extension === "md"
 		);
 	}
 }

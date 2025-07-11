@@ -1,4 +1,4 @@
-import { moment, TFile } from "obsidian";
+import { moment } from "obsidian";
 import { HabitConfig, HabitData, HabitStats, PluginSettings } from "./types";
 
 export function handleError(message: string, context?: any) {
@@ -24,6 +24,7 @@ export function processPropertyValue(
 			return null;
 
 		case "number":
+			// eslint-disable-next-line no-case-declarations
 			const num = Number(rawValue);
 			if (!isNaN(num)) return num;
 			handleError(`Invalid number value: ${rawValue}`);
@@ -42,28 +43,6 @@ export function generateDailyNotePath(
 	const momentDate = moment(date);
 	const formattedPath = momentDate.format(settings.dateFormatPattern);
 	return `${settings.baseDirectory}/${formattedPath}.md`;
-}
-
-export function getFilesInDateRange(
-	startDate: Date,
-	endDate: Date,
-	settings: PluginSettings,
-	allFiles: TFile[]
-): string[] {
-	const filePaths: string[] = [];
-	const current = moment(startDate);
-	const end = moment(endDate);
-
-	while (current.isSameOrBefore(end)) {
-		const expectedPath = generateDailyNotePath(current.toDate(), settings);
-		filePaths.push(expectedPath);
-		current.add(1, "day");
-	}
-
-	// Filter to only existing files
-	return filePaths.filter((path) =>
-		allFiles.some((file) => file.path === path)
-	);
 }
 
 export function getSuccessColor(percentage: number): string {
@@ -91,7 +70,7 @@ export function calculateHabitStats(
 	dateRange: string[]
 ): HabitStats {
 	const habitName = habitConfig.propertyName;
-	const totalDays = dateRange.length;
+	const totalDays = habitData.length;
 	let successfulDays = 0;
 	let currentStreak = 0;
 	let longestStreak = 0;
@@ -100,9 +79,9 @@ export function calculateHabitStats(
 	let validValues = 0;
 
 	// Calculate from most recent to oldest for current streak
-	for (let i = dateRange.length - 1; i >= 0; i--) {
-		const date = dateRange[i];
-		const value = habitData[date]?.habits[habitName];
+	for (let i = habitData.length - 1; i >= 0; i--) {
+		// const date = dateRange[i];
+		const value = habitData[i]?.habits[habitName];
 
 		let isSuccess = false;
 
@@ -135,11 +114,11 @@ export function calculateHabitStats(
 		if (isSuccess) {
 			successfulDays++;
 			tempStreak++;
-			if (i === dateRange.length - 1) {
+			if (i === habitData.length - 1) {
 				currentStreak = tempStreak;
 			}
 		} else {
-			if (i === dateRange.length - 1) {
+			if (i === habitData.length - 1) {
 				currentStreak = 0;
 			}
 			longestStreak = Math.max(longestStreak, tempStreak);
