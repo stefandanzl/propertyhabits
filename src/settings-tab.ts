@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting, Notice } from "obsidian";
 import { HabitConfig } from "./types";
 import { HabitDataProcessor } from "./data-processor";
+import { AddHabitModal, EditHabitModal } from "./modals";
 import type HabitTrackerPlugin from "./main";
 
 export class HabitSettingsTab extends PluginSettingTab {
@@ -42,6 +43,7 @@ export class HabitSettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.baseDirectory = value;
 						await this.plugin.saveSettings();
+						console.log("Base directory updated:", value);
 					})
 			);
 
@@ -228,137 +230,15 @@ export class HabitSettingsTab extends PluginSettingTab {
 	}
 
 	private showAddHabitModal() {
-		const availableProperties = this.dataProcessor.getAvailableProperties();
-
-		if (availableProperties.length === 0) {
-			new Notice(
-				"No suitable properties found. Make sure you have checkbox or number properties in your daily notes."
-			);
-			return;
-		}
-
-		// Create a simple modal using Setting
-		const modal = document.createElement("div");
-		modal.style.cssText = `
-			position: fixed;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			background: var(--background-primary);
-			border: 1px solid var(--background-modifier-border);
-			border-radius: 8px;
-			padding: 20px;
-			z-index: 1000;
-			min-width: 400px;
-		`;
-
-		const overlay = document.createElement("div");
-		overlay.style.cssText = `
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			background: rgba(0, 0, 0, 0.5);
-			z-index: 999;
-		`;
-
-		document.body.appendChild(overlay);
-		document.body.appendChild(modal);
-
-		const title = modal.createEl("h3");
-		title.setText("Add New Habit");
-
-		let selectedProperty = "";
-		let displayName = "";
-		let target: number | undefined;
-		let isTotal = false;
-
-		// Property selector
-		const propertySection = modal.createDiv();
-		propertySection.createEl("label").setText("Property:");
-		const propertySelect = propertySection.createEl("select");
-
-		availableProperties.forEach((prop) => {
-			const option = propertySelect.createEl("option");
-			option.value = prop.name;
-			option.setText(`${prop.name} (${prop.type})`);
-		});
-
-		propertySelect.onchange = () => {
-			selectedProperty = propertySelect.value;
-			displayName = selectedProperty;
-			displayNameInput.value = displayName;
-		};
-
-		// Display name
-		const nameSection = modal.createDiv();
-		nameSection.createEl("label").setText("Display Name:");
-		const displayNameInput = nameSection.createEl("input");
-		displayNameInput.type = "text";
-		displayNameInput.onchange = () =>
-			(displayName = displayNameInput.value);
-
-		// Target (for numbers)
-		const targetSection = modal.createDiv();
-		targetSection
-			.createEl("label")
-			.setText("Target (for number properties):");
-		const targetInput = targetSection.createEl("input");
-		targetInput.type = "number";
-		targetInput.onchange = () =>
-			(target = targetInput.valueAsNumber || undefined);
-
-		// Total vs Daily toggle
-		const totalSection = modal.createDiv();
-		const totalCheckbox = totalSection.createEl("input");
-		totalCheckbox.type = "checkbox";
-		totalCheckbox.onchange = () => (isTotal = totalCheckbox.checked);
-		totalSection
-			.createEl("label")
-			.setText(" Total target (vs daily target)");
-
-		// Buttons
-		const buttonSection = modal.createDiv();
-		buttonSection.style.marginTop = "20px";
-		buttonSection.style.textAlign = "right";
-
-		const cancelBtn = buttonSection.createEl("button");
-		cancelBtn.setText("Cancel");
-		cancelBtn.style.marginRight = "10px";
-		cancelBtn.onclick = () => {
-			document.body.removeChild(overlay);
-			document.body.removeChild(modal);
-		};
-
-		const addBtn = buttonSection.createEl("button");
-		addBtn.setText("Add Habit");
-		addBtn.onclick = async () => {
-			if (!selectedProperty || !displayName) {
-				new Notice("Please fill in all required fields");
-				return;
+		const modal = new AddHabitModal(
+			this.app,
+			this.dataProcessor,
+			async (result) => {
+				result.order = this.plugin.settings.trackedHabits.length;
+				await this.addHabit(result);
 			}
-
-			await this.addHabit({
-				propertyName: selectedProperty,
-				displayName,
-				widget: availableProperties.find(
-					(p) => p.name === selectedProperty
-				)?.type as "checkbox" | "number",
-				target,
-				isTotal,
-				order: this.plugin.settings.trackedHabits.length,
-				ignored: false,
-			});
-
-			document.body.removeChild(overlay);
-			document.body.removeChild(modal);
-		};
-
-		overlay.onclick = () => {
-			document.body.removeChild(overlay);
-			document.body.removeChild(modal);
-		};
+		);
+		modal.open();
 	}
 
 	private async addHabit(habit: HabitConfig) {
@@ -381,96 +261,15 @@ export class HabitSettingsTab extends PluginSettingTab {
 	private editHabit(index: number) {
 		const habit = this.plugin.settings.trackedHabits[index];
 
-		// Create edit modal (similar to add modal but pre-filled)
-		const modal = document.createElement("div");
-		modal.style.cssText = `
-			position: fixed;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			background: var(--background-primary);
-			border: 1px solid var(--background-modifier-border);
-			border-radius: 8px;
-			padding: 20px;
-			z-index: 1000;
-			min-width: 400px;
-		`;
-
-		const overlay = document.createElement("div");
-		overlay.style.cssText = `
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			background: rgba(0, 0, 0, 0.5);
-			z-index: 999;
-		`;
-
-		document.body.appendChild(overlay);
-		document.body.appendChild(modal);
-
-		const title = modal.createEl("h3");
-		title.setText("Edit Habit");
-
-		// Display name
-		const nameSection = modal.createDiv();
-		nameSection.createEl("label").setText("Display Name:");
-		const displayNameInput = nameSection.createEl("input");
-		displayNameInput.type = "text";
-		displayNameInput.value = habit.displayName;
-
-		// Target (for numbers)
-		const targetSection = modal.createDiv();
-		targetSection
-			.createEl("label")
-			.setText("Target (for number properties):");
-		const targetInput = targetSection.createEl("input");
-		targetInput.type = "number";
-		targetInput.value = habit.target?.toString() || "";
-
-		// Total vs Daily toggle
-		const totalSection = modal.createDiv();
-		const totalCheckbox = totalSection.createEl("input");
-		totalCheckbox.type = "checkbox";
-		totalCheckbox.checked = habit.isTotal;
-		totalSection
-			.createEl("label")
-			.setText(" Total target (vs daily target)");
-
-		// Buttons
-		const buttonSection = modal.createDiv();
-		buttonSection.style.marginTop = "20px";
-		buttonSection.style.textAlign = "right";
-
-		const cancelBtn = buttonSection.createEl("button");
-		cancelBtn.setText("Cancel");
-		cancelBtn.style.marginRight = "10px";
-		cancelBtn.onclick = () => {
-			document.body.removeChild(overlay);
-			document.body.removeChild(modal);
-		};
-
-		const saveBtn = buttonSection.createEl("button");
-		saveBtn.setText("Save Changes");
-		saveBtn.onclick = async () => {
-			habit.displayName = displayNameInput.value;
-			habit.target = targetInput.valueAsNumber || undefined;
-			habit.isTotal = totalCheckbox.checked;
-
+		const modal = new EditHabitModal(this.app, habit, async (result) => {
+			// Update the habit in place
+			Object.assign(habit, result);
 			await this.plugin.saveSettings();
 			this.display();
 			await this.plugin.refreshView();
-			new Notice(`Updated habit: ${habit.displayName}`);
-
-			document.body.removeChild(overlay);
-			document.body.removeChild(modal);
-		};
-
-		overlay.onclick = () => {
-			document.body.removeChild(overlay);
-			document.body.removeChild(modal);
-		};
+			new Notice(`Updated habit: ${result.displayName}`);
+		});
+		modal.open();
 	}
 
 	private async deleteHabit(index: number) {

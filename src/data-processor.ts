@@ -110,28 +110,32 @@ export class HabitDataProcessor {
 
 	getAvailableProperties(): Array<{ name: string; type: string }> {
 		try {
-			// Since getAllPropertyInfos may not be available in all Obsidian versions,
-			// we'll scan through existing daily notes to find properties
-			const allFiles = this.app.vault.getFiles();
-			const properties = new Map<string, string>();
-			
-			// Look through recent daily notes to find properties
-			for (const file of allFiles.slice(0, 50)) { // Check last 50 files
-				if (this.isRelevantDailyNote(file)) {
-					const metadata = this.app.metadataCache.getFileCache(file);
-					if (metadata?.frontmatter) {
-						Object.entries(metadata.frontmatter).forEach(([key, value]) => {
-							if (typeof value === 'boolean') {
-								properties.set(key, 'checkbox');
-							} else if (typeof value === 'number') {
-								properties.set(key, 'number');
-							}
-						});
-					}
-				}
-			}
-			
-			return Array.from(properties.entries()).map(([name, type]) => ({ name, type }));
+			// @ts-ignore - getAllPropertyInfos exists but is missing from API documentation
+			const allProperties = this.app.metadataCache.getAllPropertyInfos();
+
+			// Debug: log all properties to see what we're getting
+			console.log("[Habit Tracker] All properties found:", allProperties);
+			console.log(
+				"[Habit Tracker] Property entries:",
+				Object.entries(allProperties)
+			);
+
+			const filtered = Object.entries(allProperties)
+				.filter(([_, info]: [string, any]) => {
+					console.log(
+						`[Habit Tracker] Property ${_}: type="${info.widget}"`
+					);
+					return (
+						info.widget === "checkbox" || info.widget === "number"
+					);
+				})
+				.map(([name, info]: [string, any]) => ({
+					name,
+					type: info.widget,
+				}));
+
+			console.log("[Habit Tracker] Filtered properties:", filtered);
+			return filtered;
 		} catch (error) {
 			handleError("Error getting available properties", error);
 			return [];
