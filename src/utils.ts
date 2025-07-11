@@ -7,6 +7,11 @@ export function handleError(message: string, context?: any) {
 }
 
 export function processPropertyValue(widget: string, rawValue: any): boolean | number | null {
+	// Handle undefined/null values - these mean the property doesn't exist in the note
+	if (rawValue === undefined || rawValue === null) {
+		return null;
+	}
+	
 	switch (widget) {
 		case 'checkbox':
 			if (typeof rawValue === 'boolean') return rawValue;
@@ -99,7 +104,12 @@ export function calculateHabitStats(
 			validValues++;
 			
 			if (habitConfig.widget === 'checkbox') {
-				isSuccess = value === true;
+				const boolValue = value as boolean;
+				// For checkboxes, target 1 means "checked" should be success, target 0 means "unchecked" should be success
+				const targetIsChecked = (habitConfig.target || 1) === 1;
+				isSuccess = boolValue === targetIsChecked;
+				// Count checkbox values as 1 for success, 0 for failure for averaging
+				totalValue += isSuccess ? 1 : 0;
 			} else if (habitConfig.widget === 'number' && habitConfig.target) {
 				const numValue = value as number;
 				totalValue += numValue;
