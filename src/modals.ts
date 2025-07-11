@@ -128,35 +128,7 @@ export class AddHabitModal extends Modal {
 		});
 	}
 
-	private updateUIForPropertyType() {
-		const selectedProp = this.availableProperties.find(p => p.name === this.selectedProperty);
-		const targetSetting = (this as any).targetSetting;
-		const checkboxTargetSetting = (this as any).checkboxTargetSetting;
-		const totalSetting = (this as any).totalSetting;
 
-		if (!selectedProp) {
-			// No property selected, hide all target settings
-			if (targetSetting) targetSetting.settingEl.style.display = 'none';
-			if (checkboxTargetSetting) checkboxTargetSetting.settingEl.style.display = 'none';
-			if (totalSetting) totalSetting.settingEl.style.display = 'none';
-			return;
-		}
-
-		if (selectedProp.type === 'checkbox') {
-			// Show checkbox target, hide number target and total setting
-			if (targetSetting) targetSetting.settingEl.style.display = 'none';
-			if (checkboxTargetSetting) checkboxTargetSetting.settingEl.style.display = '';
-			if (totalSetting) totalSetting.settingEl.style.display = 'none';
-			this.target = 1; // Default to "checked" as target
-			this.isTotal = false; // Not applicable for checkboxes
-		} else if (selectedProp.type === 'number') {
-			// Show number target and total setting, hide checkbox target
-			if (targetSetting) targetSetting.settingEl.style.display = '';
-			if (checkboxTargetSetting) checkboxTargetSetting.settingEl.style.display = 'none';
-			if (totalSetting) totalSetting.settingEl.style.display = '';
-			this.target = undefined; // Reset target for numbers
-		}
-	}
 
 	private submitForm() {
 		if (!this.selectedProperty || !this.displayName) {
