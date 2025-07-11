@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, moment, TFile } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TFile } from "obsidian";
 import {
 	VIEW_TYPE_HABIT_TRACKER,
 	TIME_SPANS,
@@ -7,11 +7,7 @@ import {
 	HabitConfig,
 } from "./types";
 import { HabitDataProcessor } from "./data-processor";
-import {
-	calculateHabitStats,
-	getSuccessClass,
-	formatNumericHabit,
-} from "./utils";
+import { calculateHabitStats, getSuccessClass } from "./utils";
 import type HabitTrackerPlugin from "./main";
 
 export class HabitSidebarView extends ItemView {
@@ -119,7 +115,7 @@ export class HabitSidebarView extends ItemView {
 		);
 	}
 
-	private renderHabits(container: HTMLElement, habits: any[]) {
+	private renderHabits(container: HTMLElement, habits: HabitConfig[]) {
 		const timeSpan = TIME_SPANS.find(
 			(ts) => ts.key === this.plugin.settings.selectedTimeSpan
 		);
@@ -134,7 +130,7 @@ export class HabitSidebarView extends ItemView {
 
 	private renderHabitSection(
 		container: HTMLElement,
-		habit: any,
+		habit: HabitConfig,
 		dateRange: string[]
 	) {
 		const section = container.createDiv("habit-section");
@@ -144,7 +140,7 @@ export class HabitSidebarView extends ItemView {
 		const title = header.createDiv("habit-title");
 		title.setText(habit.displayName);
 
-		const stats = this.calculateStats(habit, dateRange);
+		const stats = this.calculateStats(habit);
 		const statsEl = header.createDiv("habit-stats");
 		console.log(stats.successRate);
 		statsEl.addClass(getSuccessClass(stats.successRate));
@@ -182,7 +178,7 @@ export class HabitSidebarView extends ItemView {
 
 	private renderTimeline(
 		container: HTMLElement,
-		habit: any,
+		habit: HabitConfig,
 		dateRange: string[]
 	) {
 		const timelineRow = container.createDiv("timeline-row");
@@ -236,7 +232,7 @@ export class HabitSidebarView extends ItemView {
 			const progressBar = container.createDiv("progress-bar");
 			const progressFill = progressBar.createDiv("progress-fill");
 
-			const stats = this.calculateStats(habit, dateRange);
+			const stats = this.calculateStats(habit);
 			const percentage = stats.targetAchievement || 0;
 
 			progressFill.style.width = `${Math.min(percentage, 100)}%`;
@@ -249,11 +245,11 @@ export class HabitSidebarView extends ItemView {
 		}
 	}
 
-	private calculateStats(
-		habitConfig: HabitConfig,
-		dateRange: string[]
-	): HabitStats {
-		return calculateHabitStats(this.habitData, habitConfig, dateRange);
+	private calculateStats(habitConfig: HabitConfig): HabitStats {
+		console.log("VORHER", habitConfig, this.habitData); // HIER IST ES FALSCH!!!!
+		const stats = calculateHabitStats(this.habitData, habitConfig);
+		console.log(stats);
+		return stats;
 	}
 
 	private generateDateRange(days: number): string[] {

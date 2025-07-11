@@ -1,14 +1,14 @@
 import { moment } from "obsidian";
 import { HabitConfig, HabitData, HabitStats, PluginSettings } from "./types";
 
-export function handleError(message: string, context?: any) {
+export function handleError(message: string, context?: unknown) {
 	console.error(`[Habit Tracker] ${message}`, context);
 	// Note: Notice creation should be done from the plugin context
 }
 
 export function processPropertyValue(
 	widget: string,
-	rawValue: any
+	rawValue: unknown
 ): boolean | number | null {
 	// Handle undefined/null values - these mean the property doesn't exist in the note
 	if (rawValue === undefined || rawValue === null) {
@@ -66,8 +66,7 @@ export function formatNumericHabit(value: number, target: number): string {
 
 export function calculateHabitStats(
 	habitData: HabitData,
-	habitConfig: HabitConfig,
-	dateRange: string[]
+	habitConfig: HabitConfig
 ): HabitStats {
 	const habitName = habitConfig.propertyName;
 	const totalDays = habitData.length;
@@ -78,32 +77,39 @@ export function calculateHabitStats(
 	let totalValue = 0;
 	let validValues = 0;
 
-	// Calculate from most recent to oldest for current streak
-	for (let i = habitData.length - 1; i >= 0; i--) {
-		// const date = dateRange[i];
+	// Calculate forward for proper total accumulation, then backward for streaks
+	let forwardTotalValue = 0;
+	const dailySuccessResults: boolean[] = new Array(habitData.length);
+
+	// First pass: calculate daily success/failure going forward
+	console.log(`[DEBUG] Calculating stats for habit: ${habitName}`);
+	for (let i = 0; i < habitData.length; i++) {
 		const value = habitData[i]?.habits[habitName];
-
+		const date = habitData[i]?.date;
 		let isSuccess = false;
+		
+		console.log(`[DEBUG] Day ${i} (${date}): value=${value}`);
 
+		// if (value !== null && value !== undefined) {
 		if (value !== null && value !== undefined) {
 			validValues++;
 
 			if (habitConfig.widget === "checkbox") {
 				const boolValue = value as boolean;
-				// For checkboxes, target 1 means "checked" should be success, target 0 means "unchecked" should be success
 				const targetIsChecked = (habitConfig.target || 1) === 1;
 				isSuccess = boolValue === targetIsChecked;
-				// Count checkbox values as 1 for success, 0 for failure for averaging
 				totalValue += isSuccess ? 1 : 0;
 			} else if (habitConfig.widget === "number" && habitConfig.target) {
 				const numValue = value as number;
+				forwardTotalValue += numValue;
 				totalValue += numValue;
 
 				if (habitConfig.isTotal) {
-					// For total targets, check if we're on track
+					// For total targets, check if we're on track so far
+					const daysElapsed = i + 1;
 					const expectedProgress =
-						(habitConfig.target / totalDays) * (totalDays - i);
-					isSuccess = totalValue >= expectedProgress;
+						(habitConfig.target / totalDays) * daysElapsed;
+					isSuccess = forwardTotalValue >= expectedProgress;
 				} else {
 					// For daily targets
 					isSuccess = numValue >= habitConfig.target;
@@ -111,8 +117,18 @@ export function calculateHabitStats(
 			}
 		}
 
+		dailySuccessResults[i] = isSuccess;
+		console.log(`[DEBUG] Day ${i} (${date}): isSuccess=${isSuccess}`);
 		if (isSuccess) {
 			successfulDays++;
+		}
+	}
+
+	// Second pass: calculate streaks going backward
+	for (let i = habitData.length - 1; i >= 0; i--) {
+		const isSuccess = dailySuccessResults[i];
+
+		if (isSuccess) {
 			tempStreak++;
 			if (i === habitData.length - 1) {
 				currentStreak = tempStreak;
@@ -157,7 +173,7 @@ export function calculateHabitStats(
 	};
 }
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
 	func: T,
 	wait: number
 ): (...args: Parameters<T>) => void {

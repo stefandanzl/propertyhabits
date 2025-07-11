@@ -1,12 +1,5 @@
-import { App, moment, TAbstractFile, TFile } from "obsidian";
-import {
-	HabitConfig,
-	HabitData,
-	PluginSettings,
-	TIME_SPANS,
-	DayData,
-	Habits,
-} from "./types";
+import { App, moment, TFile } from "obsidian";
+import { HabitData, PluginSettings, TIME_SPANS, Habits } from "./types";
 import {
 	handleError,
 	processPropertyValue,
@@ -55,7 +48,7 @@ export class HabitDataProcessor {
 
 			const fileHandler = this.app.vault.getFileByPath(expectedPath);
 
-			const currHabits = defaultHabits;
+			const currHabits = { ...defaultHabits };
 
 			let fileExists = false;
 			if (fileHandler && fileHandler instanceof TFile) {
@@ -92,7 +85,8 @@ export class HabitDataProcessor {
 
 			current.add(1, "day");
 		}
-		console.log("HabitData", habitData);
+		console.log(">> HabitData", habitData);
+		// this.plugin.habitData = habitData; // Store in plugin for later use
 		return habitData;
 	}
 
