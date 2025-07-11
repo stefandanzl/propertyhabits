@@ -1,11 +1,13 @@
 import { App, Modal, Setting, Notice } from "obsidian";
 import { HabitConfig } from "./types";
 import { HabitDataProcessor } from "./data-processor";
+import HabitTrackerPlugin from "main";
 
 export class AddHabitModal extends Modal {
 	result: HabitConfig | null = null;
 	onSubmit: (result: HabitConfig) => void;
 	dataProcessor: HabitDataProcessor;
+	plugin: HabitTrackerPlugin;
 
 	selectedProperty = "";
 	displayName = "";
@@ -16,10 +18,12 @@ export class AddHabitModal extends Modal {
 	constructor(
 		app: App,
 		dataProcessor: HabitDataProcessor,
+		plugin: HabitTrackerPlugin,
 		onSubmit: (result: HabitConfig) => void
 	) {
 		super(app);
 		this.dataProcessor = dataProcessor;
+		this.plugin = plugin;
 		this.onSubmit = onSubmit;
 		this.availableProperties = this.dataProcessor.getAvailableProperties();
 	}
@@ -47,7 +51,15 @@ export class AddHabitModal extends Modal {
 			.setName("Property")
 			.setDesc("Select the property from your daily notes to track")
 			.addDropdown((dropdown) => {
-				this.availableProperties.forEach((prop) => {
+				// Filter out already tracked habits
+				const untrackedProperties = this.availableProperties.filter(
+					(prop) =>
+						!this.plugin.settings.trackedHabits.some(
+							(habit) => habit.propertyName === prop.name
+						)
+				);
+
+				untrackedProperties.forEach((prop) => {
 					dropdown.addOption(
 						prop.name,
 						`${prop.name} (${prop.type})`

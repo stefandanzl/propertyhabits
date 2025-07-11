@@ -233,6 +233,7 @@ export class HabitSettingsTab extends PluginSettingTab {
 		const modal = new AddHabitModal(
 			this.app,
 			this.dataProcessor,
+			this.plugin,
 			async (result) => {
 				result.order = this.plugin.settings.trackedHabits.length;
 				await this.addHabit(result);
