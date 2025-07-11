@@ -130,8 +130,10 @@ export class HabitDataProcessor {
 					);
 				})
 				.map(([name, info]: [string, any]) => ({
-					name: info.name || name,
+					id: name,
+					name: info.name,
 					type: info.widget,
+					occurrences: info.occurrences || 0,
 				}));
 
 			console.log("[Habit Tracker] Filtered properties:", filtered);
