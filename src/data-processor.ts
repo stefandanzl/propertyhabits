@@ -130,7 +130,7 @@ export class HabitDataProcessor {
 					);
 				})
 				.map(([name, info]: [string, any]) => ({
-					name,
+					name: info.name || name,
 					type: info.widget,
 				}));
 
