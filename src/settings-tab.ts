@@ -27,7 +27,7 @@ export class HabitSettingsTab extends PluginSettingTab {
 	}
 
 	private renderBasicSettings(container: HTMLElement) {
-		const section = container.createDiv("setting-section");
+		const section = container; //.createDiv("setting-section");
 		const title = section.createDiv("setting-section-title");
 		title.setText("Basic Settings");
 
@@ -76,7 +76,7 @@ export class HabitSettingsTab extends PluginSettingTab {
 	}
 
 	private renderHabitsSection(container: HTMLElement) {
-		const section = container.createDiv("setting-section");
+		const section = container; //.createDiv("setting-section");
 		const title = section.createDiv("setting-section-title");
 		title.setText("Tracked Habits");
 
