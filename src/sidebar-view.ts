@@ -1,4 +1,11 @@
-import { ItemView, WorkspaceLeaf, Notice, TFile } from "obsidian";
+import {
+	ItemView,
+	WorkspaceLeaf,
+	Notice,
+	TFile,
+	moment,
+	MarkdownView,
+} from "obsidian";
 import {
 	VIEW_TYPE_HABIT_TRACKER,
 	TIME_SPANS,
@@ -190,11 +197,22 @@ export class HabitSidebarView extends ItemView {
 
 			// Add click functionality to open daily note
 			indicator.style.cursor = "pointer";
-			indicator.onclick = () => this.openDailyNote(day.date, filePath);
+
+			if (day.exists) {
+				// Single click for existing files
+				indicator.onclick = () => this.openDailyNote(filePath);
+			} else {
+				// Double click for non-existing files (to create them)
+				indicator.ondblclick = () =>
+					this.createDailyNote(day.date, filePath);
+
+				// Optionally add a different cursor style to indicate double-click required
+				indicator.style.cursor = "copy"; // "cell" or "crosshair" to indicate "create"
+			}
 
 			if (value === null || value === undefined) {
 				indicator.addClass("missing");
-				indicator.title = `${day.date}: No data - Click to open note`;
+				indicator.title = `${day.date}: No data - Double click to create note`;
 			} else if (habit.widget === "checkbox") {
 				const boolValue = value as boolean;
 				const targetIsChecked = (habit.target || 1) === 1;
@@ -269,61 +287,50 @@ export class HabitSidebarView extends ItemView {
 		await this.refresh();
 	}
 
-	private async openDailyNote(date: string, filePath?: string) {
-		if (filePath) {
-			// File exists, open it
-			const file = this.app.vault.getAbstractFileByPath(filePath);
-			if (file && file instanceof TFile) {
-				await this.app.workspace.getLeaf().openFile(file as TFile);
-			}
-		}
-		/** else {
-			// File doesn't exist, create it
-			const settings = this.plugin.settings;
-			const [year, month, day] = date.split("-");
-			const momentDate = moment(`${year}-${month}-${day}`);
-			const expectedPath = `${settings.baseDirectory}/${momentDate.format(
-				settings.dateFormatPattern
-			)}.md`;
-
-			try {
-				// Create the file with basic frontmatter
-				await this.app.vault.create(expectedPath, "---\n\n---\n\n");
-				const file = this.app.vault.getAbstractFileByPath(expectedPath);
-				if (file) {
-					await this.app.workspace.getLeaf().openFile(file as any);
-				}
-			} catch (error) {
-				console.error("Failed to create daily note:", error);
-				// Try to create parent directories if they don't exist
-				const pathParts = expectedPath.split("/");
-				let currentPath = "";
-				for (let i = 0; i < pathParts.length - 1; i++) {
-					currentPath += pathParts[i];
-					try {
-						await this.app.vault.createFolder(currentPath);
-					} catch (e) {
-						// Folder might already exist, ignore error
-					}
-					currentPath += "/";
-				}
-				// Try creating the file again
-				try {
-					await this.app.vault.create(expectedPath, "---\n\n---\n\n");
-					const file =
-						this.app.vault.getAbstractFileByPath(expectedPath);
-					if (file) {
-						await this.app.workspace
-							.getLeaf()
-							.openFile(file as any);
-					}
-				} catch (finalError) {
-					console.error(
-						"Failed to create daily note after creating directories:",
-						finalError
+	private async createDailyNote(date: string, filepath: string) {
+		try {
+			let templateContent = "---\n\n---\n\n";
+			if (this.plugin.settings.dailyNoteTemplate) {
+				const templateFile = this.app.vault.getAbstractFileByPath(
+					this.plugin.settings.dailyNoteTemplate
+				);
+				if (templateFile && templateFile instanceof TFile) {
+					templateContent = await this.app.vault.read(templateFile);
+					// Replace date placeholders in the template
+					templateContent = templateContent.replace(
+						// /{{date}}/g,
+						`<%tp.date.now("YYYY-MM-DD") %>`,
+						date
 					);
+					templateContent += `\nCreated on: ${moment().format(
+						"YYYY-MM-DD"
+					)} with Property Habits Plugin\n`;
 				}
 			}
-		} */
+			await this.app.vault.create(filepath, templateContent);
+			new Notice(`Daily note created: ${filepath}`);
+			// Open the newly created daily note
+			this.openDailyNote(filepath);
+			this.refresh();
+		} catch (error) {
+			console.error(`Failed to create daily note ${filepath} :`, error);
+			throw error;
+		}
+	}
+
+	private async openDailyNote(filePath: string) {
+		// File exists, open it
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+		if (file && file instanceof TFile) {
+			await this.app.workspace.getLeaf().openFile(file as TFile);
+
+			setTimeout(() => {
+				// this.app.workspace.activeEditor?.editor?.scrollTo(0);
+				this.app.workspace
+					.getActiveViewOfType(MarkdownView)
+					?.setEphemeralState({ scroll: 0 });
+				console.log("SCROLLING TO TOP");
+			}, this.plugin.settings.scrollToTopInterval);
+		}
 	}
 }

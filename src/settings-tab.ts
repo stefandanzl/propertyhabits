@@ -50,14 +50,29 @@ export class HabitSettingsTab extends PluginSettingTab {
 		new Setting(section)
 			.setName("Date Format Pattern")
 			.setDesc(
-				'Moment.js format pattern for your daily note structure (e.g., "YYYY/YYYY-MM/YYYY-MM-DD dddd")'
+				'Moment.js format pattern for your daily note structure (e.g., "YYYY/YYYY-MM/YYYY-MM-DD dd")'
 			)
 			.addText((text) =>
 				text
-					.setPlaceholder("YYYY/YYYY-MM/YYYY-MM-DD dddd")
+					.setPlaceholder("YYYY/YYYY-MM/YYYY-MM-DD dd")
 					.setValue(this.plugin.settings.dateFormatPattern)
 					.onChange(async (value) => {
 						this.plugin.settings.dateFormatPattern = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(section)
+			.setName("Daily Note Template")
+			.setDesc(
+				'Enter the path to your daily note template file (e.g., "Templates/Daily Note.md")'
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Templates/Daily Note.md")
+					.setValue(this.plugin.settings.dailyNoteTemplate)
+					.onChange(async (value) => {
+						this.plugin.settings.dailyNoteTemplate = value;
 						await this.plugin.saveSettings();
 					})
 			);
@@ -70,6 +85,36 @@ export class HabitSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.showStreaks)
 					.onChange(async (value) => {
 						this.plugin.settings.showStreaks = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(section)
+			.setName("Scroll to Top on Daily Note Open")
+			.setDesc(
+				"Automatically scroll to the top of the daily note when opened in the sidebar"
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.scrollToTop)
+					.onChange(async (value) => {
+						this.plugin.settings.scrollToTop = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(section)
+			.setName("Scroll to Top Delay Interval")
+			.setDesc(
+				"Interval in milliseconds to scroll to the top of the daily note (0 to disable)"
+			)
+			.addSlider((slider) =>
+				slider
+					.setLimits(0, 900, 50)
+					.setDynamicTooltip()
+					.setValue(this.plugin.settings.scrollToTopInterval)
+					.onChange(async (value) => {
+						this.plugin.settings.scrollToTopInterval = value;
 						await this.plugin.saveSettings();
 					})
 			);

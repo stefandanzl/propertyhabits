@@ -13,10 +13,13 @@ export interface HabitConfig {
 export interface PluginSettings {
 	baseDirectory: string;
 	dateFormatPattern: string;
+	dailyNoteTemplate: string;
 	selectedTimeSpan: string;
 	trackedHabits: HabitConfig[];
 	showStreaks: boolean;
 	refreshInterval: number;
+	scrollToTop: boolean;
+	scrollToTopInterval: number;
 }
 
 export interface Habits {
@@ -60,10 +63,13 @@ export const TIME_SPANS: TimeSpanOption[] = [
 export const DEFAULT_SETTINGS: PluginSettings = {
 	baseDirectory: "Journal",
 	dateFormatPattern: "YYYY/YYYY-MM/YYYY-MM-DD dddd",
+	dailyNoteTemplate: "",
 	selectedTimeSpan: "21days",
 	trackedHabits: [],
 	showStreaks: true,
 	refreshInterval: 1000,
+	scrollToTop: true,
+	scrollToTopInterval: 0,
 };
 
 export const VIEW_TYPE_HABIT_TRACKER = "habit-tracker-view";

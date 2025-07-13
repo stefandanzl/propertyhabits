@@ -3,7 +3,7 @@
 version: "3"
 
 vars:
-    VAULT: C:\\PROJECTS\\Obsidian\\dev9\\.obsidian\\plugins\\propertyhabits
+    VAULT: C:\\PROJECTS\\Obsidian\\hirn\\.obsidian\\plugins\\propertyhabits
 
 tasks:
     default:
