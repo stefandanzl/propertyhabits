@@ -12,6 +12,9 @@ export function processPropertyValue(
 ): boolean | number | null {
 	// Handle undefined/null values - these mean the property doesn't exist in the note
 	if (rawValue === undefined || rawValue === null) {
+		if (widget === "number") {
+			return 0;
+		}
 		return null;
 	}
 
