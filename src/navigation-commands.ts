@@ -22,7 +22,8 @@ async function getDailyNote(
 
 export async function goToPreviousDailyNote(
 	app: App,
-	settings: PluginSettings
+	settings: PluginSettings,
+	newTab = false
 ) {
 	const activeFile = app.workspace.getActiveFile();
 	if (!activeFile) {
@@ -43,7 +44,7 @@ export async function goToPreviousDailyNote(
 		const previousDate = currentFileDate.clone().subtract(i, "days");
 		const dailyNote = await getDailyNote(app, previousDate, settings);
 		if (dailyNote) {
-			await app.workspace.getLeaf().openFile(dailyNote);
+			await app.workspace.getLeaf(newTab).openFile(dailyNote);
 			return;
 		}
 	}

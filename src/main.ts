@@ -8,7 +8,10 @@ import { HabitSidebarView } from "./sidebar-view";
 import { HabitSettingsTab } from "./settings-tab";
 import { HabitDataProcessor } from "./data-processor";
 import { debounce } from "./utils";
-import { goToPreviousDailyNote, goToNextDailyNote } from "./navigation-commands";
+import {
+	goToPreviousDailyNote,
+	goToNextDailyNote,
+} from "./navigation-commands";
 
 export default class HabitTrackerPlugin extends Plugin {
 	settings: PluginSettings;
@@ -38,13 +41,23 @@ export default class HabitTrackerPlugin extends Plugin {
 			this.activateView();
 		}); */
 
-		const ribbonIcon = this.addRibbonIcon("arrow-left", "Go to previous daily note", (evt: MouseEvent) => {
-			goToPreviousDailyNote(this.app, this.settings);
-		});
-
-		ribbonIcon.addEventListener('contextmenu', (evt: MouseEvent) => {
-			goToNextDailyNote(this.app, this.settings);
-		});
+		this.addRibbonIcon(
+			"arrow-left",
+			"Go to previous daily note",
+			(evt: MouseEvent) => {
+				if (evt.button === 2) {
+					evt.preventDefault();
+					goToNextDailyNote(this.app, this.settings);
+					return;
+				} else if (evt.button === 1) {
+					evt.preventDefault();
+					this.app.workspace.openPopoutLeaf;
+					goToPreviousDailyNote(this.app, this.settings, true);
+				} else {
+					goToPreviousDailyNote(this.app, this.settings);
+				}
+			}
+		);
 
 		// Register settings tab
 		this.addSettingTab(new HabitSettingsTab(this.app, this));
