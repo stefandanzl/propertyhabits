@@ -170,6 +170,20 @@ export class HabitSidebarView extends ItemView {
 					`Avg: ${avgDisplay}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`
 				);
 			}
+		} else if (habit.widget === "multitext") {
+			const target = habit.target || 1;
+			if (habit.isTotal) {
+				statsEl.setText(
+					`Total: ${stats.totalValue}/${target} items (${stats.targetAchievement}%) - target: ${target}`
+				);
+			} else {
+				const avgDisplay = stats.averageValue
+					? stats.averageValue.toFixed(1)
+					: "0";
+				statsEl.setText(
+					`Avg: ${avgDisplay}/${target} items (${stats.targetAchievement}%) - target: ${target}`
+				);
+			}
 		}
 
 		// Timeline
@@ -242,11 +256,22 @@ export class HabitSidebarView extends ItemView {
 				}
 
 				indicator.title = `${day.date}: ${numValue}/${habit.target} - Click to open note`;
+			} else if (habit.widget === "multitext") {
+				const numValue = value as number;
+				const target = habit.target || 1; // Default to 1 if no target specified
+
+				if (numValue >= target) {
+					indicator.addClass("success");
+				} else {
+					indicator.addClass("failure");
+				}
+
+				indicator.title = `${day.date}: ${numValue} items (target: ${target}) - Click to open note`;
 			}
 		});
 
-		// Progress bar for numeric habits
-		if (habit.widget === "number" && habit.target) {
+		// Progress bar for numeric and multitext habits
+		if ((habit.widget === "number" && habit.target) || habit.widget === "multitext") {
 			const progressBar = container.createDiv("progress-bar");
 			const progressFill = progressBar.createDiv("progress-fill");
 

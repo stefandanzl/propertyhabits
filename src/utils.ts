@@ -12,7 +12,7 @@ export function processPropertyValue(
 ): boolean | number | null {
 	// Handle undefined/null values - these mean the property doesn't exist in the note
 	if (rawValue === undefined || rawValue === null) {
-		if (widget === "number") {
+		if (widget === "number" || widget === "multitext") {
 			return 0;
 		}
 		return null;
@@ -32,6 +32,14 @@ export function processPropertyValue(
 			if (!isNaN(num)) return num;
 			handleError(`Invalid number value: ${rawValue}`);
 			return null;
+
+		case "multitext":
+			// Count the number of items in the list/array
+			if (Array.isArray(rawValue)) {
+				return rawValue.length;
+			}
+			handleError(`Invalid multitext value: ${rawValue}`);
+			return 0;
 
 		default:
 			handleError(`Unsupported widget type: ${widget}`);
@@ -116,6 +124,22 @@ export function calculateHabitStats(
 					// For daily targets
 					isSuccess = numValue >= habitConfig.target;
 				}
+			} else if (habitConfig.widget === "multitext") {
+				const numValue = value as number;
+				const target = habitConfig.target || 1; // Default to 1 if no target specified
+				forwardTotalValue += numValue;
+				totalValue += numValue;
+
+				if (habitConfig.isTotal) {
+					// For total targets, check if we're on track so far
+					const daysElapsed = i + 1;
+					const expectedProgress =
+						(target / totalDays) * daysElapsed;
+					isSuccess = forwardTotalValue >= expectedProgress;
+				} else {
+					// For daily targets
+					isSuccess = numValue >= target;
+				}
 			}
 		}
 
@@ -158,6 +182,17 @@ export function calculateHabitStats(
 		} else {
 			targetAchievement = averageValue
 				? Math.round((averageValue / habitConfig.target) * 100)
+				: 0;
+		}
+	} else if (habitConfig.widget === "multitext") {
+		const target = habitConfig.target || 1; // Default to 1 if no target specified
+		if (habitConfig.isTotal) {
+			targetAchievement = Math.round(
+				(totalValue / target) * 100
+			);
+		} else {
+			targetAchievement = averageValue
+				? Math.round((averageValue / target) * 100)
 				: 0;
 		}
 	}

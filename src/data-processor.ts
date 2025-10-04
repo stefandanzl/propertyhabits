@@ -106,7 +106,7 @@ export class HabitDataProcessor {
 						`[Habit Tracker] Property ${_}: type="${info.widget}"`
 					);
 					return (
-						info.widget === "checkbox" || info.widget === "number"
+						info.widget === "checkbox" || info.widget === "number" || info.widget === "multitext"
 					);
 				})
 				.map(([name, info]: [string, any]) => ({

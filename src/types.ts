@@ -3,7 +3,7 @@
 export interface HabitConfig {
 	propertyName: string;
 	displayName: string;
-	widget: "checkbox" | "number";
+	widget: "checkbox" | "number" | "multitext";
 	target?: number;
 	isTotal: boolean;
 	order: number;

@@ -8,13 +8,16 @@ export class AddHabitModal extends Modal {
 	onSubmit: (result: HabitConfig) => void;
 	dataProcessor: HabitDataProcessor;
 	plugin: HabitTrackerPlugin;
-	displayElement: Setting | null = null;
 
 	selectedProperty = "";
+	selectedPropertyType = "";
 	displayName = "";
 	target: number | undefined;
 	isTotal = false;
 	availableProperties: Array<{ name: string; type: string }> = [];
+
+	// Container for dynamic fields
+	dynamicFieldsContainer: HTMLElement | null = null;
 
 	constructor(
 		app: App,
@@ -36,7 +39,7 @@ export class AddHabitModal extends Modal {
 			this.contentEl
 				.createDiv()
 				.setText(
-					"No suitable properties found. Make sure you have checkbox or number properties in your daily notes."
+					"No suitable properties found. Make sure you have checkbox, number, or list properties in your daily notes."
 				);
 
 			new Setting(this.contentEl).addButton((btn) =>
@@ -70,9 +73,9 @@ export class AddHabitModal extends Modal {
 				// Set initial selection to first item
 				if (untrackedProperties.length > 0) {
 					this.selectedProperty = untrackedProperties[0].name;
+					this.selectedPropertyType = untrackedProperties[0].type;
 					this.displayName = untrackedProperties[0].name;
 					dropdown.setValue(untrackedProperties[0].name);
-					this.displayElement?.addText;
 				}
 
 				this.refreshDisplayName();
@@ -80,60 +83,31 @@ export class AddHabitModal extends Modal {
 				dropdown.onChange((value) => {
 					this.selectedProperty = value;
 					this.displayName = value;
+					// Find the selected property type
+					const selectedProp = untrackedProperties.find(p => p.name === value);
+					if (selectedProp) {
+						this.selectedPropertyType = selectedProp.type;
+					}
 					// Update display name setting
 					this.refreshDisplayName();
+					this.renderDynamicFields();
 				});
 			});
 
 		// Display name
-		this.displayElement = new Setting(this.contentEl)
+		new Setting(this.contentEl)
 			.setName("Display Name")
 			.setDesc("How this habit will appear in the tracker")
 			.addText((text) => {
+				text.setValue(this.displayName);
 				text.onChange((value) => {
 					this.displayName = value;
 				});
 			});
 
-		// Target (for number properties)
-		new Setting(this.contentEl)
-			.setName("Target")
-			.setDesc(
-				"Target value for number properties (leave empty for checkbox properties)"
-			)
-			.addText((text) => {
-				text.setPlaceholder("e.g., 8 for 8 hours of sleep");
-				text.onChange((value) => {
-					const num = Number(value);
-					this.target = isNaN(num) ? undefined : num;
-				});
-			});
-
-		// Checkbox target setting
-		new Setting(this.contentEl)
-			.setName("Checkbox Target")
-			.setDesc(
-				"For checkbox properties: should the target be checked (true) or unchecked (false)?"
-			)
-			.addToggle((toggle) => {
-				toggle.setValue(true); // Default to "checked" as target
-				toggle.onChange((value) => {
-					// Store as 1 for checked, 0 for unchecked
-					this.target = value ? 1 : 0;
-				});
-			});
-
-		// Total vs Daily toggle
-		new Setting(this.contentEl)
-			.setName("Total target")
-			.setDesc(
-				"Whether the target is total over the period (vs daily target)"
-			)
-			.addToggle((toggle) => {
-				toggle.onChange((value) => {
-					this.isTotal = value;
-				});
-			});
+		// Create container for dynamic fields
+		this.dynamicFieldsContainer = this.contentEl.createDiv();
+		this.renderDynamicFields();
 
 		// Buttons
 		new Setting(this.contentEl)
@@ -168,6 +142,71 @@ export class AddHabitModal extends Modal {
 		});
 	}
 
+	private renderDynamicFields() {
+		if (!this.dynamicFieldsContainer) return;
+
+		// Clear existing fields
+		this.dynamicFieldsContainer.empty();
+
+		if (this.selectedPropertyType === "checkbox") {
+			// Checkbox-specific fields
+			new Setting(this.dynamicFieldsContainer)
+				.setName("Checkbox Target")
+				.setDesc("Should the target be checked (true) or unchecked (false)?")
+				.addToggle((toggle) => {
+					toggle.setValue(true); // Default to "checked" as target
+					toggle.onChange((value) => {
+						// Store as 1 for checked, 0 for unchecked
+						this.target = value ? 1 : 0;
+					});
+				});
+		} else if (this.selectedPropertyType === "number") {
+			// Number-specific fields
+			new Setting(this.dynamicFieldsContainer)
+				.setName("Target")
+				.setDesc("Target value for this number property")
+				.addText((text) => {
+					text.setPlaceholder("e.g., 8 for 8 hours of sleep");
+					text.onChange((value) => {
+						const num = Number(value);
+						this.target = isNaN(num) ? undefined : num;
+					});
+				});
+
+			new Setting(this.dynamicFieldsContainer)
+				.setName("Total target")
+				.setDesc("Whether the target is total over the period (vs daily target)")
+				.addToggle((toggle) => {
+					toggle.setValue(this.isTotal);
+					toggle.onChange((value) => {
+						this.isTotal = value;
+					});
+				});
+		} else if (this.selectedPropertyType === "multitext") {
+			// Multitext-specific fields
+			new Setting(this.dynamicFieldsContainer)
+				.setName("Target")
+				.setDesc("Minimum number of list items required (defaults to 1)")
+				.addText((text) => {
+					text.setPlaceholder("e.g., 3 for 3 list items");
+					text.onChange((value) => {
+						const num = Number(value);
+						this.target = isNaN(num) ? undefined : num;
+					});
+				});
+
+			new Setting(this.dynamicFieldsContainer)
+				.setName("Total target")
+				.setDesc("Whether the target is total over the period (vs daily target)")
+				.addToggle((toggle) => {
+					toggle.setValue(this.isTotal);
+					toggle.onChange((value) => {
+						this.isTotal = value;
+					});
+				});
+		}
+	}
+
 	private submitForm() {
 		if (!this.selectedProperty || !this.displayName) {
 			new Notice("Please fill in all required fields");
@@ -185,7 +224,7 @@ export class AddHabitModal extends Modal {
 		const result: HabitConfig = {
 			propertyName: this.selectedProperty,
 			displayName: this.displayName,
-			widget: selectedProp.type as "checkbox" | "number",
+			widget: selectedProp.type as "checkbox" | "number" | "multitext",
 			target: this.target,
 			isTotal: this.isTotal,
 			order: 0, // Will be set by the calling code
@@ -229,31 +268,65 @@ export class EditHabitModal extends Modal {
 				});
 			});
 
-		// Target (for number properties)
-		new Setting(this.contentEl)
-			.setName("Target")
-			.setDesc("Target value for number properties")
-			.addText((text) => {
-				text.setValue(this.habit.target?.toString() || "");
-				text.setPlaceholder("e.g., 8 for 8 hours of sleep");
-				text.onChange((value) => {
-					const num = Number(value);
-					this.habit.target = isNaN(num) ? undefined : num;
+		// Render fields based on widget type
+		if (this.habit.widget === "checkbox") {
+			// Checkbox-specific fields
+			new Setting(this.contentEl)
+				.setName("Checkbox Target")
+				.setDesc("Should the target be checked (true) or unchecked (false)?")
+				.addToggle((toggle) => {
+					toggle.setValue((this.habit.target || 1) === 1);
+					toggle.onChange((value) => {
+						this.habit.target = value ? 1 : 0;
+					});
 				});
-			});
+		} else if (this.habit.widget === "number") {
+			// Number-specific fields
+			new Setting(this.contentEl)
+				.setName("Target")
+				.setDesc("Target value for this number property")
+				.addText((text) => {
+					text.setValue(this.habit.target?.toString() || "");
+					text.setPlaceholder("e.g., 8 for 8 hours of sleep");
+					text.onChange((value) => {
+						const num = Number(value);
+						this.habit.target = isNaN(num) ? undefined : num;
+					});
+				});
 
-		// Total vs Daily toggle
-		new Setting(this.contentEl)
-			.setName("Total target")
-			.setDesc(
-				"Whether the target is total over the period (vs daily target)"
-			)
-			.addToggle((toggle) => {
-				toggle.setValue(this.habit.isTotal);
-				toggle.onChange((value) => {
-					this.habit.isTotal = value;
+			new Setting(this.contentEl)
+				.setName("Total target")
+				.setDesc("Whether the target is total over the period (vs daily target)")
+				.addToggle((toggle) => {
+					toggle.setValue(this.habit.isTotal);
+					toggle.onChange((value) => {
+						this.habit.isTotal = value;
+					});
 				});
-			});
+		} else if (this.habit.widget === "multitext") {
+			// Multitext-specific fields
+			new Setting(this.contentEl)
+				.setName("Target")
+				.setDesc("Minimum number of list items required (defaults to 1)")
+				.addText((text) => {
+					text.setValue(this.habit.target?.toString() || "");
+					text.setPlaceholder("e.g., 3 for 3 list items");
+					text.onChange((value) => {
+						const num = Number(value);
+						this.habit.target = isNaN(num) ? undefined : num;
+					});
+				});
+
+			new Setting(this.contentEl)
+				.setName("Total target")
+				.setDesc("Whether the target is total over the period (vs daily target)")
+				.addToggle((toggle) => {
+					toggle.setValue(this.habit.isTotal);
+					toggle.onChange((value) => {
+						this.habit.isTotal = value;
+					});
+				});
+		}
 
 		// Buttons
 		new Setting(this.contentEl)
