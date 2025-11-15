@@ -34,7 +34,7 @@ export class HabitSidebarView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Habit Tracker";
+		return "Property Habits";
 	}
 
 	getIcon(): string {
@@ -92,7 +92,7 @@ export class HabitSidebarView extends ItemView {
 	private renderHeader(container: HTMLElement) {
 		const header = container.createDiv("habit-tracker-header");
 		const title = header.createDiv("habit-tracker-title");
-		title.setText("Habit Tracker");
+		title.setText("Property Habits");
 	}
 
 	private renderTimeSpanSelector(container: HTMLElement) {
