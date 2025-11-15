@@ -149,7 +149,6 @@ export class HabitSidebarView extends ItemView {
 
 		const stats = this.calculateStats(habit);
 		const statsEl = header.createDiv("habit-stats");
-		// console.log(stats.successRate);
 		statsEl.addClass(getSuccessClass(stats.successRate));
 
 		if (habit.widget === "checkbox") {
@@ -224,7 +223,75 @@ export class HabitSidebarView extends ItemView {
 				indicator.style.cursor = "copy"; // "cell" or "crosshair" to indicate "create"
 			}
 
-			if (value === null || value === undefined) {
+			// Handle number habits first
+			if (habit.widget === "number") {
+				const numValue = Number(value);
+				const isInvalidNumber =
+					value === null ||
+					value === undefined ||
+					(typeof value === "string" && value === "") ||
+					isNaN(numValue) ||
+					numValue === 0;
+
+				// Always create battery-style visualization for number habits
+				indicator.addClass("battery");
+
+				if (isInvalidNumber) {
+					// For number habits with no data or zero value, create red battery
+					indicator.addClass("no-data");
+					const valueText = numValue === 0 ? "Value is 0" : "No data";
+					indicator.title = `${day.date}: ${valueText} - Double click to create note`;
+				} else {
+					const numValueDisplay = numValue;
+
+					if (habit.target && !isNaN(numValue)) {
+						// When we have a target, show percentage-based fill
+						const percentage = Math.min(
+							(numValue / habit.target) * 100,
+							100
+						);
+						const fillElement = indicator.createDiv("battery-fill");
+						fillElement.style.height = `${percentage}%`;
+
+						// Set fill color based on success level
+						if (percentage >= 75) {
+							fillElement.addClass("success-high");
+						} else if (percentage >= 50) {
+							fillElement.addClass("success-medium");
+						} else if (percentage >= 25) {
+							fillElement.addClass("success-partial");
+						} else {
+							fillElement.addClass("success-low");
+						}
+
+						indicator.title = `${day.date}: ${numValue}/${
+							habit.target
+						} (${Math.round(percentage)}%) - Click to open note`;
+					} else {
+						// When no target or invalid value, show red battery or minimal fill
+						if (!isNaN(numValue) && numValue > 0) {
+							// Show small green fill for positive values without target
+							const fillElement =
+								indicator.createDiv("battery-fill");
+							const percentage = Math.min(numValue * 10, 100); // Scale up to show something
+							fillElement.style.height = `${Math.max(
+								percentage,
+								10
+							)}%`; // At least 10%
+							fillElement.addClass("success-partial");
+						} else {
+							// No target and zero/invalid value - completely red
+							indicator.addClass("no-data");
+						}
+
+						const targetText = habit.target
+							? `${habit.target}`
+							: "no target";
+						indicator.title = `${day.date}: ${numValueDisplay} (target: ${targetText}) - Click to open note`;
+					}
+				}
+			} else if (value === null || value === undefined) {
+				// Handle nullish values for non-number habits
 				indicator.addClass("missing");
 				indicator.title = `${day.date}: No data - Double click to create note`;
 			} else if (habit.widget === "checkbox") {
@@ -243,19 +310,6 @@ export class HabitSidebarView extends ItemView {
 						boolValue ? "✓" : "✗"
 					} - Click to open note`;
 				}
-			} else if (habit.widget === "number" && habit.target) {
-				const numValue = value as number;
-				const percentage = (numValue / habit.target) * 100;
-
-				if (percentage >= 100) {
-					indicator.addClass("success");
-				} else if (percentage >= 50) {
-					indicator.addClass("partial");
-				} else {
-					indicator.addClass("failure");
-				}
-
-				indicator.title = `${day.date}: ${numValue}/${habit.target} - Click to open note`;
 			} else if (habit.widget === "multitext") {
 				const numValue = value as number;
 				const target = habit.target || 1; // Default to 1 if no target specified
@@ -271,7 +325,10 @@ export class HabitSidebarView extends ItemView {
 		});
 
 		// Progress bar for numeric and multitext habits
-		if ((habit.widget === "number" && habit.target) || habit.widget === "multitext") {
+		if (
+			(habit.widget === "number" && habit.target) ||
+			habit.widget === "multitext"
+		) {
 			const progressBar = container.createDiv("progress-bar");
 			const progressFill = progressBar.createDiv("progress-fill");
 

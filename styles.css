@@ -104,7 +104,7 @@
 .timeline-row {
 	display: flex;
 	gap: 2px;
-	align-items: center;
+	align-items: flex-start; /* Align to top for battery indicators */
 }
 
 .timeline-indicator {
@@ -113,6 +113,49 @@
 	border-radius: 2px;
 	flex-shrink: 0;
 	transition: all 0.2s ease;
+}
+
+/* Battery-style indicators for number habits */
+.timeline-indicator.battery {
+	width: 12px;
+	height: 24px;
+	border-radius: 3px;
+	background: var(--background-modifier-border) !important;
+	overflow: hidden;
+	position: relative;
+}
+
+.timeline-indicator > .battery-fill {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: #22c55e;
+	transition: height 0.2s ease;
+}
+
+.timeline-indicator > .battery-fill.success-high {
+	background: #22c55e;
+}
+
+.timeline-indicator > .battery-fill.success-medium {
+	background: #65a30d;
+}
+
+.timeline-indicator > .battery-fill.success-partial {
+	background: #eab308;
+}
+
+.timeline-indicator > .battery-fill.success-low {
+	background: #f97316;
+}
+
+.timeline-indicator > .battery-fill.success-poor {
+	background: #ef4444;
+}
+
+.timeline-indicator.battery.no-data {
+	background: #ef4444 !important;
 }
 
 .timeline-indicator.success {
