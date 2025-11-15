@@ -1,7 +1,7 @@
 {
 	"id": "propertyhabits",
 	"name": "Property Habits",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"minAppVersion": "1.9.4",
 	"description": "Track daily habits from your daily note properties with visual progress indicators and streak tracking.",
 	"author": "Stefan Danzl",
