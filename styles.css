@@ -105,6 +105,7 @@
 	display: flex;
 	gap: 2px;
 	align-items: flex-start; /* Align to top for battery indicators */
+	justify-content: flex-end; /* Align to right so overflow happens on left side */
 }
 
 .timeline-indicator {

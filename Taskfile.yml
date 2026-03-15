@@ -29,6 +29,7 @@ tasks:
         cmds:
             - task: build
             - task: copy
+            - task: reload-obsidian
     copy:
         cmds:
             - cp main.js '{{.DIR_PLUGIN}}/main.js'
@@ -38,6 +39,14 @@ tasks:
     build:
         cmds:
             - npm run build
+
+    reload:
+        cmds:
+            - obsidian plugin:reload id={{.PLUGIN_ID}}
+
+    reload-obsidian:
+        cmds:
+            - obsidian command id=app:reload
     patch:
         cmds:
             - npm version patch
