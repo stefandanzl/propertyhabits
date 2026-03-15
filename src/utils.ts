@@ -1,5 +1,5 @@
 import { moment } from "obsidian";
-import { HabitConfig, HabitData, HabitStats, PluginSettings } from "./types";
+import { HabitConfig, HabitData, HabitStats, PluginSettings, MultitextValueData, DayData } from "./types";
 
 export function handleError(message: string, context?: unknown) {
 	console.error(`[Habit Tracker] ${message}`, context);
@@ -219,4 +219,80 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
 		clearTimeout(timeout);
 		timeout = setTimeout(() => func.apply(this, args), wait);
 	};
+}
+
+/**
+ * Extracts unique multitext values from habit data with their counts and first occurrence index
+ */
+export function extractMultitextValues(
+	habitData: HabitData,
+	propertyName: string,
+	sortMode: "alphabetical" | "frequency" | "first_occurrence",
+	limitValues?: number
+): MultitextValueData[] {
+	const valueMap = new Map<string, { count: number; firstIndex: number }>();
+
+	// First pass: collect counts and first occurrence indices
+	habitData.forEach((day, index) => {
+		const values = day?.multitextValues?.[propertyName];
+		if (Array.isArray(values)) {
+			values.forEach((value) => {
+				const strValue = String(value);
+				if (!valueMap.has(strValue)) {
+					valueMap.set(strValue, {
+						count: 0,
+						firstIndex: index,
+					});
+				}
+				const entry = valueMap.get(strValue);
+				if (entry) {
+					entry.count++;
+				}
+			});
+		}
+	});
+
+	// Convert to array and sort
+	let result: MultitextValueData[] = Array.from(valueMap.entries()).map(
+		([value, data]) => ({
+			value,
+			count: data.count,
+			firstOccurrenceIndex: data.firstIndex,
+		})
+	);
+
+	// Sort based on mode
+	switch (sortMode) {
+		case "alphabetical":
+			result.sort((a, b) => a.value.localeCompare(b.value));
+			break;
+		case "frequency":
+			result.sort((a, b) => b.count - a.count);
+			break;
+		case "first_occurrence":
+			result.sort((a, b) => a.firstOccurrenceIndex - b.firstOccurrenceIndex);
+			break;
+	}
+
+	// Apply limit if specified
+	if (limitValues && limitValues > 0) {
+		result = result.slice(0, limitValues);
+	}
+
+	return result;
+}
+
+/**
+ * Checks if a specific multitext value is present in a day's data
+ */
+export function hasMultitextValue(
+	dayData: DayData,
+	propertyName: string,
+	valueToCheck: string
+): boolean {
+	const values = dayData?.multitextValues?.[propertyName];
+	if (!Array.isArray(values)) {
+		return false;
+	}
+	return values.some((v) => String(v) === valueToCheck);
 }

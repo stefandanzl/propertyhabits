@@ -49,6 +49,7 @@ export class HabitDataProcessor {
 			const fileHandler = this.app.vault.getFileByPath(expectedPath);
 
 			const currHabits = { ...defaultHabits };
+			const multitextValues: Record<string, string[]> = {};
 
 			let fileExists = false;
 			if (fileHandler && fileHandler instanceof TFile) {
@@ -68,6 +69,11 @@ export class HabitDataProcessor {
 							);
 
 							currHabits[habit.propertyName] = processedValue;
+
+							// Store raw multitext arrays
+							if (habit.widget === "multitext" && Array.isArray(rawValue)) {
+								multitextValues[habit.propertyName] = rawValue as string[];
+							}
 						}
 					}
 				} catch (error) {
@@ -80,6 +86,7 @@ export class HabitDataProcessor {
 				filePath: expectedPath,
 				exists: fileExists,
 				habits: currHabits,
+				multitextValues: Object.keys(multitextValues).length > 0 ? multitextValues : undefined,
 			});
 
 			current.add(1, "day");

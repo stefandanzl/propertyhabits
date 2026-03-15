@@ -14,6 +14,8 @@ export class AddHabitModal extends Modal {
 	displayName = "";
 	target: number | undefined;
 	isTotal = false;
+	sortMode: "alphabetical" | "frequency" | "first_occurrence" = "frequency";
+	limitValues: number | undefined;
 	availableProperties: Array<{ name: string; type: string }> = [];
 
 	// Container for dynamic fields
@@ -185,6 +187,30 @@ export class AddHabitModal extends Modal {
 		} else if (this.selectedPropertyType === "multitext") {
 			// Multitext-specific fields
 			new Setting(this.dynamicFieldsContainer)
+				.setName("Sort mode")
+				.setDesc("How to sort the values in the table view")
+				.addDropdown((dropdown) => {
+					dropdown.addOption("alphabetical", "Alphabetical");
+					dropdown.addOption("frequency", "Frequency");
+					dropdown.addOption("first_occurrence", "First occurrence");
+					dropdown.setValue(this.sortMode);
+					dropdown.onChange((value) => {
+						this.sortMode = value as "alphabetical" | "frequency" | "first_occurrence";
+					});
+				});
+
+			new Setting(this.dynamicFieldsContainer)
+				.setName("Limit values")
+				.setDesc("Maximum number of unique values to show (leave empty for no limit)")
+				.addText((text) => {
+					text.setPlaceholder("e.g., 10");
+					text.onChange((value) => {
+						const num = Number(value);
+						this.limitValues = isNaN(num) || value === "" ? undefined : num;
+					});
+				});
+
+			new Setting(this.dynamicFieldsContainer)
 				.setName("Target")
 				.setDesc("Minimum number of list items required (defaults to 1)")
 				.addText((text) => {
@@ -229,6 +255,8 @@ export class AddHabitModal extends Modal {
 			isTotal: this.isTotal,
 			order: 0, // Will be set by the calling code
 			ignored: false,
+			sortMode: this.sortMode,
+			limitValues: this.limitValues,
 		};
 
 		this.close();
@@ -305,6 +333,31 @@ export class EditHabitModal extends Modal {
 				});
 		} else if (this.habit.widget === "multitext") {
 			// Multitext-specific fields
+			new Setting(this.contentEl)
+				.setName("Sort mode")
+				.setDesc("How to sort the values in the table view")
+				.addDropdown((dropdown) => {
+					dropdown.addOption("alphabetical", "Alphabetical");
+					dropdown.addOption("frequency", "Frequency");
+					dropdown.addOption("first_occurrence", "First occurrence");
+					dropdown.setValue(this.habit.sortMode || "frequency");
+					dropdown.onChange((value) => {
+						this.habit.sortMode = value as "alphabetical" | "frequency" | "first_occurrence";
+					});
+				});
+
+			new Setting(this.contentEl)
+				.setName("Limit values")
+				.setDesc("Maximum number of unique values to show (leave empty for no limit)")
+				.addText((text) => {
+					text.setPlaceholder("e.g., 10");
+					text.setValue(this.habit.limitValues?.toString() || "");
+					text.onChange((value) => {
+						const num = Number(value);
+						this.habit.limitValues = isNaN(num) || value === "" ? undefined : num;
+					});
+				});
+
 			new Setting(this.contentEl)
 				.setName("Target")
 				.setDesc("Minimum number of list items required (defaults to 1)")

@@ -8,6 +8,9 @@ export interface HabitConfig {
 	isTotal: boolean;
 	order: number;
 	ignored: boolean;
+	// Multitext-specific settings
+	sortMode?: "alphabetical" | "frequency" | "first_occurrence";
+	limitValues?: number;
 }
 
 export interface PluginSettings {
@@ -31,9 +34,17 @@ export interface DayData {
 	filePath: string;
 	exists: boolean;
 	habits: Habits;
+	// Store raw multitext arrays for detailed tracking
+	multitextValues?: Record<string, string[]>;
 }
 
 export type HabitData = Array<DayData>;
+
+export interface MultitextValueData {
+	value: string;
+	count: number;
+	firstOccurrenceIndex: number;
+}
 
 export interface HabitStats {
 	habitName: string;

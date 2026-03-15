@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf, Notice, TFile, moment, MarkdownView } from "obsidian";
 import { VIEW_TYPE_HABIT_TRACKER, TIME_SPANS, HabitData, HabitStats, HabitConfig } from "./types";
 import { HabitDataProcessor } from "./data-processor";
-import { calculateHabitStats, getSuccessClass } from "./utils";
+import { calculateHabitStats, getSuccessClass, extractMultitextValues, hasMultitextValue } from "./utils";
 import type HabitTrackerPlugin from "./main";
 
 export class HabitSidebarView extends ItemView {
@@ -92,7 +92,7 @@ export class HabitSidebarView extends ItemView {
     }
 
     private renderEmptyState(container: HTMLElement) {
-        const emptyState = container.createDiv("empty-state");
+        const emptyState = container.createDiv("empty-state-area");
         const icon = emptyState.createDiv("empty-state-icon");
         icon.setText("📊");
 
@@ -148,7 +148,14 @@ export class HabitSidebarView extends ItemView {
 
         // Timeline
         const timeline = section.createDiv("habit-timeline");
-        this.renderTimeline(timeline, habit, dateRange);
+
+        if (habit.widget === "multitext") {
+            // New table-style display for multitext
+            this.renderMultitextTable(timeline, habit);
+        } else {
+            // Original timeline for checkbox and number
+            this.renderTimeline(timeline, habit, dateRange);
+        }
 
         // Streak info
         if (this.plugin.settings.showStreaks && stats.currentStreak > 0) {
@@ -277,6 +284,63 @@ export class HabitSidebarView extends ItemView {
             else if (percentage >= 25) progressFill.addClass("success-low");
             else progressFill.addClass("success-poor");
         }
+    }
+
+    private renderMultitextTable(container: HTMLElement, habit: HabitConfig) {
+        // Extract unique values sorted by the configured mode
+        const uniqueValues = extractMultitextValues(this.habitData, habit.propertyName, habit.sortMode || "frequency", habit.limitValues);
+
+        if (uniqueValues.length === 0) {
+            const emptyState = container.createDiv("empty-state-area");
+            emptyState.setText("No values found in the selected time period.");
+            return;
+        }
+
+        // Container for the table
+        const tableContainer = container.createDiv("multitext-table-container");
+
+        // Labels container (left side)
+        const labelsContainer = tableContainer.createDiv("multitext-labels");
+
+        // Timelines container (right side)
+        const timelinesContainer = tableContainer.createDiv("multitext-timelines");
+
+        // Create a row for each unique value
+        uniqueValues.forEach((valueData) => {
+            // Label row
+            const labelCell = labelsContainer.createDiv("multitext-label");
+            labelCell.setText(valueData.value);
+            labelCell.title = `${valueData.value} (${valueData.count} occurrences)`;
+
+            // Timeline row (indicators)
+            const timelineRow = timelinesContainer.createDiv("timeline-row");
+
+            this.habitData.forEach((day) => {
+                const indicator = timelineRow.createDiv("timeline-indicator");
+                const filePath = day?.filePath;
+
+                // Add click functionality to open daily note
+                indicator.style.cursor = "pointer";
+
+                if (day.exists) {
+                    indicator.onclick = () => this.openDailyNote(filePath);
+                } else {
+                    indicator.ondblclick = () => this.createDailyNote(day.date, filePath);
+                    indicator.style.cursor = "copy";
+                }
+
+                // Check if this value exists on this day
+                const hasValue = hasMultitextValue(day, habit.propertyName, valueData.value);
+
+                if (hasValue) {
+                    indicator.addClass("success");
+                    indicator.title = `${day.date}: ${valueData.value} - Click to open note`;
+                } else {
+                    indicator.addClass("failure");
+                    indicator.title = `${day.date}: No data - Double click to create note`;
+                }
+            });
+        });
     }
 
     private calculateStats(habitConfig: HabitConfig): HabitStats {
