@@ -268,7 +268,7 @@ export class HabitSidebarView extends ItemView {
         });
 
         // Progress bar for numeric and multitext habits
-
+        /*
         if ((habit.widget === "number" && habit.target) || habit.widget === "multitext") {
             const progressBar = container.createDiv("progress-bar");
             const progressFill = progressBar.createDiv("progress-fill");
@@ -284,6 +284,7 @@ export class HabitSidebarView extends ItemView {
             else if (percentage >= 25) progressFill.addClass("success-low");
             else progressFill.addClass("success-poor");
         }
+		*/
     }
 
     private renderMultitextTable(container: HTMLElement, habit: HabitConfig) {
