@@ -127,8 +127,12 @@ export class HabitSidebarView extends ItemView {
         statsEl.addClass(getSuccessClass(stats.successRate));
 
         if (habit.widget === "checkbox") {
-            const targetText = habit.target === 0 ? "unchecked" : "checked";
-            statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%) - target: ${targetText}`);
+            if (habit.target !== undefined) {
+                const targetText = habit.target === 0 ? "unchecked" : "checked";
+                statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%) - target: ${targetText}`);
+            } else {
+                statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%)`);
+            }
         } else if (habit.widget === "number" && habit.target) {
             if (habit.isTotal) {
                 statsEl.setText(`Total: ${stats.totalValue}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`);
@@ -137,12 +141,20 @@ export class HabitSidebarView extends ItemView {
                 statsEl.setText(`Avg: ${avgDisplay}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`);
             }
         } else if (habit.widget === "multitext") {
-            const target = habit.target || 1;
-            if (habit.isTotal) {
-                statsEl.setText(`Total: ${stats.totalValue}/${target} items (${stats.targetAchievement}%) - target: ${target}`);
+            if (habit.target) {
+                if (habit.isTotal) {
+                    statsEl.setText(`Total: ${stats.totalValue}/${habit.target} items (${stats.targetAchievement}%) - target: ${habit.target}`);
+                } else {
+                    const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : "0";
+                    statsEl.setText(`Avg: ${avgDisplay}/${habit.target} items (${stats.targetAchievement}%) - target: ${habit.target}`);
+                }
             } else {
-                const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : "0";
-                statsEl.setText(`Avg: ${avgDisplay}/${target} items (${stats.targetAchievement}%) - target: ${target}`);
+                if (habit.isTotal) {
+                    statsEl.setText(`Total: ${stats.totalValue} items`);
+                } /*else {
+                    const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : "0";
+                    statsEl.setText(`Avg: ${avgDisplay} items`);
+                }*/
             }
         }
 
@@ -247,6 +259,7 @@ export class HabitSidebarView extends ItemView {
                 }
             } else if (habit.widget === "checkbox") {
                 const boolValue = value as boolean;
+
                 const targetIsChecked = (habit.target || 1) === 1;
                 const isSuccess = boolValue === targetIsChecked;
 

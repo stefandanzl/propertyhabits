@@ -97,8 +97,10 @@ export function calculateHabitStats(habitData: HabitData, habitConfig: HabitConf
 
             if (habitConfig.widget === "checkbox") {
                 const boolValue = value as boolean;
+
                 const targetIsChecked = (habitConfig.target || 1) === 1;
                 isSuccess = boolValue === targetIsChecked;
+
                 totalValue += isSuccess ? 1 : 0;
             } else if (habitConfig.widget === "number" && habitConfig.target) {
                 const numValue = value as number;
@@ -116,18 +118,19 @@ export function calculateHabitStats(habitData: HabitData, habitConfig: HabitConf
                 }
             } else if (habitConfig.widget === "multitext") {
                 const numValue = value as number;
-                const target = habitConfig.target || 1; // Default to 1 if no target specified
                 forwardTotalValue += numValue;
                 totalValue += numValue;
 
-                if (habitConfig.isTotal) {
-                    // For total targets, check if we're on track so far
-                    const daysElapsed = i + 1;
-                    const expectedProgress = (target / totalDays) * daysElapsed;
-                    isSuccess = forwardTotalValue >= expectedProgress;
-                } else {
-                    // For daily targets
-                    isSuccess = numValue >= target;
+                if (habitConfig.target !== undefined) {
+                    if (habitConfig.isTotal) {
+                        // For total targets, check if we're on track so far
+                        const daysElapsed = i + 1;
+                        const expectedProgress = (habitConfig.target / totalDays) * daysElapsed;
+                        isSuccess = forwardTotalValue >= expectedProgress;
+                    } else {
+                        // For daily targets
+                        isSuccess = numValue >= habitConfig.target;
+                    }
                 }
             }
         }
@@ -169,11 +172,12 @@ export function calculateHabitStats(habitData: HabitData, habitConfig: HabitConf
             targetAchievement = averageValue ? Math.round((averageValue / habitConfig.target) * 100) : 0;
         }
     } else if (habitConfig.widget === "multitext") {
-        const target = habitConfig.target || 1; // Default to 1 if no target specified
-        if (habitConfig.isTotal) {
-            targetAchievement = Math.round((totalValue / target) * 100);
-        } else {
-            targetAchievement = averageValue ? Math.round((averageValue / target) * 100) : 0;
+        if (habitConfig.target !== undefined) {
+            if (habitConfig.isTotal) {
+                targetAchievement = Math.round((totalValue / habitConfig.target) * 100);
+            } else {
+                targetAchievement = averageValue ? Math.round((averageValue / habitConfig.target) * 100) : 0;
+            }
         }
     }
 
