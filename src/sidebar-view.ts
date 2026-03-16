@@ -189,20 +189,30 @@ export class HabitSidebarView extends ItemView {
             // Handle number habits first
             if (habit.widget === "number") {
                 const numValue = Number(value);
-                const isInvalidNumber = value === null || value === undefined || (typeof value === "string" && value === "") || isNaN(numValue) || numValue === 0;
-
+                const isNullish = value === null || value === undefined || numValue === 0 || (typeof value === "string" && value === "");
+                const isInvalidNumber = isNaN(numValue);
                 // Always create battery-style visualization for number habits
                 indicator.addClass("battery");
 
+                if (!day.exists) {
+                    indicator.addClass("missing");
+                    indicator.title = `${day.date}: No file - Double click to create note`;
+                    return;
+                }
                 if (isInvalidNumber) {
+                    // For number habits with no data or zero value, create red battery
+                    indicator.addClass("bad-data");
+                    const valueText = `Bad data entry: Value is ${value}`;
+                    indicator.title = `${day.date}: ${valueText} - Click to open note`;
+                } else if (isNullish) {
                     // For number habits with no data or zero value, create red battery
                     indicator.addClass("no-data");
                     const valueText = numValue === 0 ? "Value is 0" : "No data";
-                    indicator.title = `${day.date}: ${valueText} - Double click to create note`;
+                    indicator.title = `${day.date}: ${valueText} - Click to open note`;
                 } else {
                     const numValueDisplay = numValue;
 
-                    if (habit.target && !isNaN(numValue)) {
+                    if (habit.target) {
                         // When we have a target, show percentage-based fill
                         const percentage = Math.min((numValue / habit.target) * 100, 100);
                         const fillElement = indicator.createDiv("battery-fill");
@@ -220,71 +230,40 @@ export class HabitSidebarView extends ItemView {
                         }
 
                         indicator.title = `${day.date}: ${numValue}/${habit.target} (${Math.round(percentage)}%) - Click to open note`;
+                        const targetText = habit.target ? `${habit.target}` : "no target";
+                        indicator.title = `${day.date}: ${numValueDisplay} (target: ${targetText}) - Click to open note`;
                     } else {
                         // When no target or invalid value, show red battery or minimal fill
-                        if (!isNaN(numValue) && numValue > 0) {
-                            // Show small green fill for positive values without target
-                            const fillElement = indicator.createDiv("battery-fill");
-                            const percentage = Math.min(numValue * 10, 100); // Scale up to show something
-                            fillElement.style.height = `${Math.max(percentage, 10)}%`; // At least 10%
-                            fillElement.addClass("success-partial");
+                        if (numValue > 0) {
+                            indicator.addClass("raw-data");
+                            indicator.setText(numValue.toString());
+
+                            indicator.title = `${day.date}: Value ${numValueDisplay} (no target defined) - Click to open note`;
                         } else {
                             // No target and zero/invalid value - completely red
                             indicator.addClass("no-data");
                         }
-
-                        const targetText = habit.target ? `${habit.target}` : "no target";
-                        indicator.title = `${day.date}: ${numValueDisplay} (target: ${targetText}) - Click to open note`;
                     }
                 }
-            } else if (value === null || value === undefined) {
-                // Handle nullish values for non-number habits
-                indicator.addClass("missing");
-                indicator.title = `${day.date}: No data - Double click to create note`;
             } else if (habit.widget === "checkbox") {
                 const boolValue = value as boolean;
                 const targetIsChecked = (habit.target || 1) === 1;
                 const isSuccess = boolValue === targetIsChecked;
 
-                if (isSuccess) {
-                    indicator.addClass("success");
-                    indicator.title = `${day.date}: ${boolValue ? "✓" : "✗"} - Click to open note`;
+                if (day.exists) {
+                    if (isSuccess) {
+                        indicator.addClass("success");
+                        indicator.title = `${day.date}: ${boolValue ? "✓" : "✗"} - Click to open note`;
+                    } else {
+                        indicator.addClass("failure");
+                        indicator.title = `${day.date}: ${boolValue ? "✓" : "✗"} - Click to open note`;
+                    }
                 } else {
-                    indicator.addClass("failure");
-                    indicator.title = `${day.date}: ${boolValue ? "✓" : "✗"} - Click to open note`;
+                    indicator.addClass("missing");
+                    indicator.title = `${day.date}: No file - Double click to create note`;
                 }
-            } else if (habit.widget === "multitext") {
-                const numValue = value as number;
-                const target = habit.target || 1; // Default to 1 if no target specified
-
-                if (numValue >= target) {
-                    indicator.addClass("success");
-                } else {
-                    indicator.addClass("failure");
-                }
-
-                indicator.title = `${day.date}: ${numValue} items (target: ${target}) - Click to open note`;
             }
         });
-
-        // Progress bar for numeric and multitext habits
-        /*
-        if ((habit.widget === "number" && habit.target) || habit.widget === "multitext") {
-            const progressBar = container.createDiv("progress-bar");
-            const progressFill = progressBar.createDiv("progress-fill");
-
-            const stats = this.calculateStats(habit);
-            const percentage = stats.targetAchievement || 0;
-
-            progressFill.style.width = `${Math.min(percentage, 100)}%`;
-
-            if (percentage >= 90) progressFill.addClass("success-high");
-            else if (percentage >= 75) progressFill.addClass("success-medium");
-            else if (percentage >= 50) progressFill.addClass("success-partial");
-            else if (percentage >= 25) progressFill.addClass("success-low");
-            else progressFill.addClass("success-poor");
-        }
-		*/
     }
 
     private renderMultitextTable(container: HTMLElement, habit: HabitConfig) {
@@ -323,22 +302,25 @@ export class HabitSidebarView extends ItemView {
                 // Add click functionality to open daily note
                 indicator.style.cursor = "pointer";
 
-                if (day.exists) {
-                    indicator.onclick = () => this.openDailyNote(filePath);
-                } else {
-                    indicator.ondblclick = () => this.createDailyNote(day.date, filePath);
-                    indicator.style.cursor = "copy";
-                }
-
                 // Check if this value exists on this day
                 const hasValue = hasMultitextValue(day, habit.propertyName, valueData.value);
 
-                if (hasValue) {
-                    indicator.addClass("success");
-                    indicator.title = `${day.date}: ${valueData.value} - Click to open note`;
+                if (day.exists) {
+                    indicator.onclick = () => this.openDailyNote(filePath);
+
+                    if (hasValue) {
+                        indicator.addClass("success");
+                        indicator.title = `${day.date}: ${valueData.value} - Click to open note`;
+                    } else {
+                        indicator.addClass("empty");
+                        indicator.title = `${day.date}: No data - Click to open note`;
+                    }
                 } else {
-                    indicator.addClass("failure");
-                    indicator.title = `${day.date}: No data - Double click to create note`;
+                    indicator.ondblclick = () => this.createDailyNote(day.date, filePath);
+                    indicator.style.cursor = "copy";
+
+                    indicator.addClass("missing");
+                    indicator.title = `${day.date}: No file - Double click to create note`;
                 }
             });
         });
