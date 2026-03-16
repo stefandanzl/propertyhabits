@@ -57,13 +57,15 @@ export class AddHabitModal extends Modal {
 			.setName("Property")
 			.setDesc("Select the property from your daily notes to track")
 			.addDropdown((dropdown) => {
-				// Filter out already tracked habits
-				const untrackedProperties = this.availableProperties.filter(
-					(prop) =>
-						!this.plugin.settings.trackedHabits.some(
-							(habit) => habit.propertyName === prop.name
-						)
-				);
+				// Filter out already tracked habits and sort alphabetically
+				const untrackedProperties = this.availableProperties
+					.filter(
+						(prop) =>
+							!this.plugin.settings.trackedHabits.some(
+								(habit) => habit.propertyName === prop.name
+							)
+					)
+					.sort((a, b) => a.name.localeCompare(b.name));
 
 				untrackedProperties.forEach((prop) => {
 					dropdown.addOption(
