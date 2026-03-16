@@ -104,6 +104,17 @@ export class HabitSettingsTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     })
             );
+
+        new Setting(section)
+            .setName("Show Status Bar Indicator")
+            .setDesc("Show habit completion status for current day in the status bar")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.showStatusBar).onChange(async (value) => {
+                    this.plugin.settings.showStatusBar = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.toggleStatusBar(value);
+                })
+            );
     }
 
     private renderHabitsSection(container: HTMLElement) {

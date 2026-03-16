@@ -1,15 +1,17 @@
-import { Plugin, WorkspaceLeaf, Notice, TFile } from "obsidian";
-import { DEFAULT_SETTINGS, PluginSettings, VIEW_TYPE_HABIT_TRACKER } from "./types";
+import { Plugin, WorkspaceLeaf, Notice, TFile, moment } from "obsidian";
+import { DEFAULT_SETTINGS, PluginSettings, VIEW_TYPE_HABIT_TRACKER, HabitConfig } from "./types";
 import { HabitSidebarView } from "./sidebar-view";
 import { HabitSettingsTab } from "./settings-tab";
 import { HabitDataProcessor } from "./data-processor";
-import { debounce } from "./utils";
+import { debounce, generateDailyNotePath, processPropertyValue } from "./utils";
 import { goToPreviousDailyNote, goToNextDailyNote } from "./navigation-commands";
 
 export default class HabitTrackerPlugin extends Plugin {
     settings: PluginSettings;
     dataProcessor: HabitDataProcessor;
     debouncedRefresh: () => void;
+    debouncedUpdateStatusBar: () => void;
+    statusBarItem: HTMLElement | null = null;
 
     async onload() {
         await this.loadSettings();
@@ -19,6 +21,9 @@ export default class HabitTrackerPlugin extends Plugin {
 
         // Create debounced refresh function
         this.debouncedRefresh = debounce(() => this.refreshView(), this.settings.refreshInterval);
+
+        // Create debounced status bar update (with longer delay to ensure cache is updated)
+        this.debouncedUpdateStatusBar = debounce(() => this.updateStatusBar(), 500);
 
         // Register sidebar view
         this.registerView(VIEW_TYPE_HABIT_TRACKER, (leaf) => new HabitSidebarView(leaf, this));
@@ -45,17 +50,22 @@ export default class HabitTrackerPlugin extends Plugin {
         // Register settings tab
         this.addSettingTab(new HabitSettingsTab(this.app, this));
 
+        // Initialize status bar
+        this.initStatusBar();
+
         // Register file modification events for real-time updates
         this.registerEvent(
             this.app.vault.on("modify", (file) => {
                 if (file instanceof TFile && this.dataProcessor.isRelevantDailyNote(file)) {
                     this.debouncedRefresh();
+                    this.debouncedUpdateStatusBar();
                 }
             })
         );
 
         // Auto-activate view on startup if not already visible
         this.app.workspace.onLayoutReady(() => {
+            this.debouncedUpdateStatusBar();
             const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_HABIT_TRACKER);
             if (leaves.length === 0) {
                 this.activateView();
@@ -91,6 +101,7 @@ export default class HabitTrackerPlugin extends Plugin {
 
         // Update debounced refresh interval
         this.debouncedRefresh = debounce(() => this.refreshView(), this.settings.refreshInterval);
+        this.debouncedUpdateStatusBar = debounce(() => this.updateStatusBar(), 500);
     }
 
     async activateView() {
@@ -142,6 +153,122 @@ export default class HabitTrackerPlugin extends Plugin {
             return true;
         } else {
             return false;
+        }
+    }
+
+    initStatusBar() {
+        this.statusBarItem = this.addStatusBarItem();
+        this.statusBarItem.addClass("habit-tracker-status-bar");
+        this.statusBarItem.onclick = () => this.handleStatusBarClick();
+
+        // Initial update - respect the setting
+        if (this.settings.showStatusBar) {
+            // this.updateStatusBar();
+            // this.debouncedUpdateStatusBar();
+        } else {
+            this.statusBarItem.hide();
+        }
+    }
+
+    toggleStatusBar(enabled: boolean) {
+        if (this.statusBarItem) {
+            if (enabled) {
+                this.statusBarItem.show();
+                this.updateStatusBar();
+            } else {
+                this.statusBarItem.hide();
+            }
+        }
+    }
+
+    async handleStatusBarClick() {
+        // Ensure today's note exists, then open sidebar
+        await this.ensureTodaysNote();
+        await this.activateView();
+    }
+
+    async ensureTodaysNote() {
+        const today = moment();
+        const expectedPath = generateDailyNotePath(today.toDate(), this.settings);
+
+        const existingFile = this.app.vault.getFileByPath(expectedPath);
+        if (!existingFile) {
+            // Create the daily note using the template
+            let templateContent = "---\n\n---\n\n";
+            if (this.settings.dailyNoteTemplate) {
+                const templateFile = this.app.vault.getAbstractFileByPath(this.settings.dailyNoteTemplate);
+                if (templateFile && templateFile instanceof TFile) {
+                    templateContent = await this.app.vault.read(templateFile);
+                    templateContent = templateContent.replace(`<%tp.date.now("YYYY-MM-DD") %>`, today.format("YYYY-MM-DD"));
+                    templateContent += `\nCreated on: ${moment().format("YYYY-MM-DD")} with Property Habits Plugin\n`;
+                }
+            }
+            await this.app.vault.create(expectedPath, templateContent);
+        }
+    }
+
+    async updateStatusBar() {
+        if (!this.statusBarItem || !this.settings.showStatusBar) return;
+
+        // Get active habits with targets
+        const habitsWithTargets = this.settings.trackedHabits.filter((h) => !h.ignored && h.target !== undefined);
+
+        if (habitsWithTargets.length === 0) {
+            this.statusBarItem.empty();
+            return;
+        }
+
+        // Get today's date and check habits
+        const today = moment();
+        const expectedPath = generateDailyNotePath(today.toDate(), this.settings);
+        const file = this.app.vault.getFileByPath(expectedPath);
+
+        this.statusBarItem.empty();
+
+        for (const habit of habitsWithTargets) {
+            const box = this.statusBarItem.createEl("span", {
+                cls: "habit-status-box",
+            });
+
+            let isDone = false;
+
+            if (file && file instanceof TFile) {
+                // File exists, check the actual value
+                try {
+                    const metadata = this.app.metadataCache.getFileCache(file);
+                    const rawValue = metadata?.frontmatter?.[habit.propertyName];
+                    const value = processPropertyValue(habit.widget, rawValue);
+
+                    isDone = this.checkHabitDone(habit, value);
+                } catch {
+                    isDone = false;
+                }
+            }
+            // If file doesn't exist, isDone stays false (red)
+
+            box.addClass(isDone ? "habit-done" : "habit-undone");
+            box.setAttribute("title", `${habit.displayName}: ${isDone ? "Done" : "Not done"}`);
+        }
+    }
+
+    checkHabitDone(habit: HabitConfig, value: boolean | number | null): boolean {
+        if (habit.target === undefined) return false;
+
+        switch (habit.widget) {
+            case "checkbox":
+                const targetIsChecked = habit.target === 1;
+                return value === targetIsChecked;
+
+            case "number":
+                const numValue = typeof value === "number" ? value : 0;
+                return numValue >= habit.target;
+
+            case "multitext":
+                const countValue = typeof value === "number" ? value : 0;
+                return countValue >= habit.target;
+
+            default:
+                return false;
         }
     }
 }

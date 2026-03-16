@@ -23,6 +23,7 @@ export interface PluginSettings {
     refreshInterval: number;
     scrollToTop: boolean;
     scrollToTopInterval: number;
+    showStatusBar: boolean;
 }
 
 export interface Habits {
@@ -81,6 +82,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     refreshInterval: 1000,
     scrollToTop: true,
     scrollToTopInterval: 0,
+    showStatusBar: true,
 };
 
 export const VIEW_TYPE_HABIT_TRACKER = "habit-tracker-view";

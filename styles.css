@@ -517,3 +517,40 @@
         background: #ffff00;
     }
 }
+
+/* =============================================================================
+   STATUS BAR HABIT INDICATOR
+   ============================================================================= */
+
+.habit-tracker-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: opacity 0.2s ease;
+}
+
+.habit-tracker-status-bar:hover {
+    opacity: 0.8;
+}
+
+.habit-status-box {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.habit-status-box:hover {
+    transform: scale(1.3);
+}
+
+.habit-status-box.habit-done {
+    background: #22c55e;
+}
+
+.habit-status-box.habit-undone {
+    background: #ef4444;
+}
