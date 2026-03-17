@@ -198,9 +198,11 @@ export class HabitSettingsTab extends PluginSettingTab {
         const displayName = habitInfo.createDiv("habit-display-name");
         displayName.setText(`Property: ${habit.propertyName} (${habit.widget})`);
 
-        if (habit.target) {
-            const targetInfo = habitInfo.createDiv("habit-display-name");
-            targetInfo.setText(`Target: ${habit.target}${habit.isTotal ? " (total)" : " (daily)"}`);
+        if (habit.widget !== "checkbox") {
+            if (habit.target) {
+                const targetInfo = habitInfo.createDiv("habit-display-name");
+                targetInfo.setText(`Target: ${habit.target}${habit.isTotal ? " (total)" : " (daily)"}`);
+            }
         }
 
         // Controls

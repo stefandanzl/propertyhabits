@@ -78,12 +78,8 @@ export class StatusBar {
     async updateStatusBar() {
         if (Platform.isMobile || !this.plugin.statusBarItem || !this.settings.showStatusBar) return;
 
-        console.log(this.settings.trackedHabits);
-
         // Get active habits with targets and showInStatusBar enabled
         const habitsWithTargets = this.settings.trackedHabits.filter((h) => !h.ignored && h.target !== undefined && h.showInStatusBar);
-
-        console.log(habitsWithTargets);
 
         if (habitsWithTargets.length === 0) {
             this.plugin.statusBarItem.empty();

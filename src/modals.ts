@@ -293,7 +293,7 @@ export class EditHabitModal extends Modal {
                 .setName("Checkbox Target")
                 .setDesc("Should the target be checked (true) or unchecked (false)?")
                 .addToggle((toggle) => {
-                    toggle.setValue((this.habit.target || 1) === 1);
+                    toggle.setValue(this.habit.target === 1);
                     toggle.onChange((value) => {
                         this.habit.target = value ? 1 : 0;
                     });
