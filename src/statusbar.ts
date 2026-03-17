@@ -1,15 +1,23 @@
 import HabitTrackerPlugin from "main";
-import { App, Platform, TFile, moment } from "obsidian";
+import { App, Notice, Platform, TFile, moment } from "obsidian";
 import { HabitConfig, PluginSettings } from "types";
 import { generateDailyNotePath, processPropertyValue } from "utils";
 
+interface Commands {
+    executeCommandById(id: string): boolean;
+}
+
+interface AppWithCommands extends App {
+    commands: Commands;
+}
+
 export class StatusBar {
-    app: App;
+    app: AppWithCommands;
     plugin: HabitTrackerPlugin;
     settings: PluginSettings;
 
     constructor(app: App, plugin: HabitTrackerPlugin, settings: PluginSettings) {
-        this.app = app;
+        this.app = app as AppWithCommands;
         this.plugin = plugin;
         this.settings = settings;
     }
@@ -17,8 +25,8 @@ export class StatusBar {
     initStatusBar() {
         this.plugin.statusBarItem = this.plugin.addStatusBarItem();
         this.plugin.statusBarItem.addClass("habit-tracker-status-bar");
-        this.plugin.statusBarItem.onclick = () => this.handleStatusBarClick();
-        this.plugin.statusBarItem.ondblclick = () => this.handleStatusBarClick(true);
+        this.plugin.statusBarItem.onclick = (event: MouseEvent) => this.handleStatusBarClick(event);
+        this.plugin.statusBarItem.ondblclick = (event: MouseEvent) => this.handleStatusBarClick(event, true);
 
         // Initial update - respect the setting
         if (this.settings.showStatusBar) {
@@ -40,7 +48,15 @@ export class StatusBar {
         }
     }
 
-    async handleStatusBarClick(doubleClick = false) {
+    async handleStatusBarClick(event: MouseEvent, doubleClick = false) {
+        // Middle click - run custom command if configured
+        if (this.settings.customDailyNoteCommand) {
+            new Notice("Using custom DailyNote Command!");
+            (this.app as AppWithCommands).commands.executeCommandById(this.settings.customDailyNoteCommand);
+            return;
+        }
+
+        // Left click - default behavior
         // Ensure today's note exists, then open sidebar
 
         const today = moment();

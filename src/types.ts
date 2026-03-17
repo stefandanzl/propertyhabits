@@ -24,6 +24,7 @@ export interface PluginSettings {
     scrollToTop: boolean;
     scrollToTopInterval: number;
     showStatusBar: boolean;
+    customDailyNoteCommand: string;
 }
 
 export interface Habits {
@@ -83,6 +84,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     scrollToTop: true,
     scrollToTopInterval: 0,
     showStatusBar: true,
+    customDailyNoteCommand: "",
 };
 
 export const VIEW_TYPE_HABIT_TRACKER = "habit-tracker-view";

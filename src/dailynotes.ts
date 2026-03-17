@@ -22,9 +22,7 @@ export class DailyNotes {
      */
     async getDailyNote(date: moment.Moment): Promise<TFile | null> {
         const expectedPath = generateDailyNotePath(date, this.settings);
-        console.log("getDailyNote - date:", date.format("YYYY-MM-DD"), "expectedPath:", expectedPath);
         const file = this.app.vault.getFileByPath(expectedPath);
-        console.log("getDailyNote - file:", file);
 
         if (file instanceof TFile) {
             return file;
@@ -102,7 +100,7 @@ export class DailyNotes {
             await this.app.vault.create(filepath, templateContent);
             new Notice(`Daily note created: ${filepath}`);
             // Open the newly created daily note
-            this.plugin.dailyNotes.openDailyNote(filepath);
+            this.openDailyNote(filepath);
             this.plugin.refreshView();
         } catch (error) {
             console.error(`Failed to create daily note ${filepath} :`, error);

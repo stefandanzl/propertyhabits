@@ -115,6 +115,19 @@ export class HabitSettingsTab extends PluginSettingTab {
                     this.plugin.statusBar.toggleStatusBar(value);
                 })
             );
+
+        new Setting(section)
+            .setName("Custom Daily Note Command")
+            .setDesc('Middle-click on status bar to run this Obsidian command (e.g., "smartsync:daily-note"). Leave empty to use default behavior.')
+            .addText((text) =>
+                text
+                    .setPlaceholder("smartsync:daily-note")
+                    .setValue(this.plugin.settings.customDailyNoteCommand)
+                    .onChange(async (value) => {
+                        this.plugin.settings.customDailyNoteCommand = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
     }
 
     private renderHabitsSection(container: HTMLElement) {
