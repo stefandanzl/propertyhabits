@@ -285,6 +285,7 @@ export class HabitSettingsTab extends PluginSettingTab {
         await this.plugin.saveSettings();
         this.display();
         await this.plugin.refreshView();
+        await this.plugin.statusBar.updateStatusBar();
         new Notice(`Added habit: ${habit.displayName}`);
     }
 
@@ -297,6 +298,7 @@ export class HabitSettingsTab extends PluginSettingTab {
             await this.plugin.saveSettings();
             this.display();
             await this.plugin.refreshView();
+            await this.plugin.statusBar.updateStatusBar();
             new Notice(`Updated habit: ${result.displayName}`);
         });
         modal.open();

@@ -8,6 +8,7 @@ export interface HabitConfig {
     isTotal: boolean;
     order: number;
     ignored: boolean;
+    showInStatusBar: boolean;
     // Multitext-specific settings
     sortMode?: "alphabetical" | "frequency" | "first_occurrence";
     limitValues?: number;

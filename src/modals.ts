@@ -14,6 +14,7 @@ export class AddHabitModal extends Modal {
     displayName = "";
     target: number | undefined;
     isTotal = false;
+    showInStatusBar = true;
     sortMode: "alphabetical" | "frequency" | "first_occurrence" = "frequency";
     limitValues: number | undefined;
     availableProperties: Array<{ name: string; type: string }> = [];
@@ -93,6 +94,17 @@ export class AddHabitModal extends Modal {
         // Create container for dynamic fields
         this.dynamicFieldsContainer = this.contentEl.createDiv();
         this.renderDynamicFields();
+
+        // Show in status bar (common setting for all habits)
+        new Setting(this.contentEl)
+            .setName("Show in status bar")
+            .setDesc("Display this habit in the status bar indicator")
+            .addToggle((toggle) => {
+                toggle.setValue(this.showInStatusBar);
+                toggle.onChange((value) => {
+                    this.showInStatusBar = value;
+                });
+            });
 
         // Buttons
         new Setting(this.contentEl)
@@ -234,6 +246,7 @@ export class AddHabitModal extends Modal {
             isTotal: this.isTotal,
             order: 0, // Will be set by the calling code
             ignored: false,
+            showInStatusBar: this.showInStatusBar,
             sortMode: this.sortMode,
             limitValues: this.limitValues,
         };
@@ -358,6 +371,17 @@ export class EditHabitModal extends Modal {
                     });
                 });
         }
+
+        // Show in status bar (common setting for all habits)
+        new Setting(this.contentEl)
+            .setName("Show in status bar")
+            .setDesc("Display this habit in the status bar indicator")
+            .addToggle((toggle) => {
+                toggle.setValue(this.habit.showInStatusBar);
+                toggle.onChange((value) => {
+                    this.habit.showInStatusBar = value;
+                });
+            });
 
         // Buttons
         new Setting(this.contentEl)

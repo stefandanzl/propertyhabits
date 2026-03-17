@@ -1,5 +1,6 @@
 import HabitTrackerPlugin from "main";
 import { App, Notice, Platform, TFile, moment } from "obsidian";
+import { HabitSettingsTab } from "settings-tab";
 import { HabitConfig, PluginSettings } from "types";
 import { generateDailyNotePath, processPropertyValue } from "utils";
 
@@ -77,8 +78,12 @@ export class StatusBar {
     async updateStatusBar() {
         if (Platform.isMobile || !this.plugin.statusBarItem || !this.settings.showStatusBar) return;
 
-        // Get active habits with targets
-        const habitsWithTargets = this.settings.trackedHabits.filter((h) => !h.ignored && h.target !== undefined);
+        console.log(this.settings.trackedHabits);
+
+        // Get active habits with targets and showInStatusBar enabled
+        const habitsWithTargets = this.settings.trackedHabits.filter((h) => !h.ignored && h.target !== undefined && h.showInStatusBar);
+
+        console.log(habitsWithTargets);
 
         if (habitsWithTargets.length === 0) {
             this.plugin.statusBarItem.empty();
