@@ -189,10 +189,10 @@ export class HabitSidebarView extends ItemView {
 
             if (day.exists) {
                 // Single click for existing files
-                indicator.onclick = () => this.openDailyNote(filePath);
+                indicator.onclick = () => this.plugin.dailyNotes.openDailyNote(filePath);
             } else {
                 // Double click for non-existing files (to create them)
-                indicator.ondblclick = () => this.createDailyNote(day.date, filePath);
+                indicator.ondblclick = () => this.plugin.dailyNotes.createDailyNote(day.date, filePath);
 
                 // Optionally add a different cursor style to indicate double-click required
                 indicator.style.cursor = "copy"; // "cell" or "crosshair" to indicate "create"
@@ -319,7 +319,7 @@ export class HabitSidebarView extends ItemView {
                 const hasValue = hasMultitextValue(day, habit.propertyName, valueData.value);
 
                 if (day.exists) {
-                    indicator.onclick = () => this.openDailyNote(filePath);
+                    indicator.onclick = () => this.plugin.dailyNotes.openDailyNote(filePath);
 
                     if (hasValue) {
                         indicator.addClass("success");
@@ -329,7 +329,7 @@ export class HabitSidebarView extends ItemView {
                         indicator.title = `${day.date}: No data - Click to open note`;
                     }
                 } else {
-                    indicator.ondblclick = () => this.createDailyNote(day.date, filePath);
+                    indicator.ondblclick = () => this.plugin.dailyNotes.createDailyNote(day.date, filePath);
                     indicator.style.cursor = "copy";
 
                     indicator.addClass("missing");
@@ -361,46 +361,5 @@ export class HabitSidebarView extends ItemView {
         this.plugin.settings.selectedTimeSpan = timeSpanKey;
         await this.plugin.saveSettings();
         await this.refresh();
-    }
-
-    private async createDailyNote(date: string, filepath: string) {
-        try {
-            let templateContent = "---\n\n---\n\n";
-            if (this.plugin.settings.dailyNoteTemplate) {
-                const templateFile = this.app.vault.getAbstractFileByPath(this.plugin.settings.dailyNoteTemplate);
-                if (templateFile && templateFile instanceof TFile) {
-                    templateContent = await this.app.vault.read(templateFile);
-                    // Replace date placeholders in the template
-                    templateContent = templateContent.replace(
-                        // /{{date}}/g,
-                        `<%tp.date.now("YYYY-MM-DD") %>`,
-                        date
-                    );
-                    templateContent += `\nCreated on: ${moment().format("YYYY-MM-DD")} with Property Habits Plugin\n`;
-                }
-            }
-            await this.app.vault.create(filepath, templateContent);
-            new Notice(`Daily note created: ${filepath}`);
-            // Open the newly created daily note
-            this.openDailyNote(filepath);
-            this.refresh();
-        } catch (error) {
-            console.error(`Failed to create daily note ${filepath} :`, error);
-            throw error;
-        }
-    }
-
-    private async openDailyNote(filePath: string) {
-        // File exists, open it
-        const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (file && file instanceof TFile) {
-            await this.app.workspace.getLeaf().openFile(file as TFile);
-
-            setTimeout(() => {
-                // this.app.workspace.activeEditor?.editor?.scrollTo(0);
-                this.app.workspace.getActiveViewOfType(MarkdownView)?.setEphemeralState({ scroll: 0 });
-                console.log("SCROLLING TO TOP");
-            }, this.plugin.settings.scrollToTopInterval);
-        }
     }
 }

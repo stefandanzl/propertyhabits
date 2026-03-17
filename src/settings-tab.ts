@@ -112,7 +112,7 @@ export class HabitSettingsTab extends PluginSettingTab {
                 toggle.setValue(this.plugin.settings.showStatusBar).onChange(async (value) => {
                     this.plugin.settings.showStatusBar = value;
                     await this.plugin.saveSettings();
-                    this.plugin.toggleStatusBar(value);
+                    this.plugin.statusBar.toggleStatusBar(value);
                 })
             );
     }

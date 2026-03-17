@@ -1,13 +1,16 @@
-import { App, TFile, moment } from "obsidian";
+import { App, MarkdownView, Notice, TFile, moment } from "obsidian";
 import { PluginSettings } from "./types";
 import { generateDailyNotePath } from "./utils";
+import HabitTrackerPlugin from "main";
 
-export class HabitDailyNotes {
+export class DailyNotes {
     app: App;
+    plugin: HabitTrackerPlugin;
     settings: PluginSettings;
 
-    constructor(app: App, settings: PluginSettings) {
+    constructor(app: App, plugin: HabitTrackerPlugin, settings: PluginSettings) {
         this.app = app;
+        this.plugin = plugin;
         this.settings = settings;
     }
 
@@ -46,10 +49,7 @@ export class HabitDailyNotes {
             const templateFile = this.app.vault.getAbstractFileByPath(this.settings.dailyNoteTemplate);
             if (templateFile && templateFile instanceof TFile) {
                 templateContent = await this.app.vault.read(templateFile);
-                templateContent = templateContent.replace(
-                    `<%tp.date.now("YYYY-MM-DD") %>`,
-                    moment(date).format("YYYY-MM-DD")
-                );
+                templateContent = templateContent.replace(`<%tp.date.now("YYYY-MM-DD") %>`, moment(date).format("YYYY-MM-DD"));
                 templateContent += `\nCreated on: ${moment().format("YYYY-MM-DD")} with Property Habits Plugin\n`;
             }
         }
@@ -65,10 +65,45 @@ export class HabitDailyNotes {
      * Open a daily note in the editor
      * @param filePath - The path to the daily note file
      */
-    async openDailyNote(filePath: string): Promise<void> {
+    async openDailyNote(filePath: string) {
+        // File exists, open it
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (file && file instanceof TFile) {
-            await this.app.workspace.getLeaf().openFile(file);
+            await this.app.workspace.getLeaf().openFile(file as TFile);
+
+            setTimeout(() => {
+                // this.app.workspace.activeEditor?.editor?.scrollTo(0);
+                this.app.workspace.getActiveViewOfType(MarkdownView)?.setEphemeralState({ scroll: 0 });
+                console.log("SCROLLING TO TOP");
+            }, this.plugin.settings.scrollToTopInterval);
+        }
+    }
+
+    async createDailyNote(date: string, filepath: string) {
+        try {
+            let templateContent = "---\n\n---\n\n";
+            if (this.plugin.settings.dailyNoteTemplate) {
+                const templateFile = this.app.vault.getAbstractFileByPath(this.plugin.settings.dailyNoteTemplate);
+                if (templateFile && templateFile instanceof TFile) {
+                    templateContent = await this.app.vault.read(templateFile);
+                    // Replace date placeholders in the template
+                    /*templateContent = templateContent.replace(
+                        // /{{date}}/g,
+                        `<%tp.date.now("YYYY-MM-DD") %>`,
+                        date
+                    );
+*/
+                    templateContent += `\nCreated on: ${moment().format("YYYY-MM-DD")} with Property Habits Plugin\n`;
+                }
+            }
+            await this.app.vault.create(filepath, templateContent);
+            new Notice(`Daily note created: ${filepath}`);
+            // Open the newly created daily note
+            this.plugin.dailyNotes.openDailyNote(filepath);
+            this.plugin.refreshView();
+        } catch (error) {
+            console.error(`Failed to create daily note ${filepath} :`, error);
+            throw error;
         }
     }
 

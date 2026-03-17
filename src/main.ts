@@ -5,10 +5,14 @@ import { HabitSettingsTab } from "./settings-tab";
 import { HabitDataProcessor } from "./data-processor";
 import { generateDailyNotePath, processPropertyValue } from "./utils";
 import { goToPreviousDailyNote, goToNextDailyNote } from "./navigation-commands";
+import { DailyNotes } from "dailynotes";
+import { StatusBar } from "statusbar";
 
 export default class HabitTrackerPlugin extends Plugin {
     settings: PluginSettings;
     dataProcessor: HabitDataProcessor;
+    dailyNotes: DailyNotes;
+    statusBar: StatusBar;
     debouncedRefresh: () => void;
     debouncedUpdateStatusBar: () => void;
     statusBarItem: HTMLElement | null = null;
@@ -18,12 +22,14 @@ export default class HabitTrackerPlugin extends Plugin {
 
         // Initialize data processor
         this.dataProcessor = new HabitDataProcessor(this.app, this.settings);
+        this.dailyNotes = new DailyNotes(this.app, this, this.settings);
+        this.statusBar = new StatusBar(this.app, this, this.settings);
 
         // Create debounced refresh function
         this.debouncedRefresh = debounce(() => this.refreshView(), this.settings.refreshInterval);
 
         // Create debounced status bar update (with longer delay to ensure cache is updated)
-        this.debouncedUpdateStatusBar = debounce(() => this.updateStatusBar(), 500);
+        this.debouncedUpdateStatusBar = debounce(() => this.statusBar.updateStatusBar(), 500);
 
         // Register sidebar view
         this.registerView(VIEW_TYPE_HABIT_TRACKER, (leaf) => new HabitSidebarView(leaf, this));
@@ -52,7 +58,7 @@ export default class HabitTrackerPlugin extends Plugin {
 
         // Initialize status bar (not available on mobile)
         if (!Platform.isMobile) {
-            this.initStatusBar();
+            this.statusBar.initStatusBar();
         }
 
         // Register file modification events for real-time updates
@@ -103,7 +109,7 @@ export default class HabitTrackerPlugin extends Plugin {
 
         // Update debounced refresh interval
         this.debouncedRefresh = debounce(() => this.refreshView(), this.settings.refreshInterval);
-        this.debouncedUpdateStatusBar = debounce(() => this.updateStatusBar(), 500);
+        this.debouncedUpdateStatusBar = debounce(() => this.statusBar.updateStatusBar(), 500);
     }
 
     async activateView() {
@@ -155,127 +161,6 @@ export default class HabitTrackerPlugin extends Plugin {
             return true;
         } else {
             return false;
-        }
-    }
-
-    initStatusBar() {
-        this.statusBarItem = this.addStatusBarItem();
-        this.statusBarItem.addClass("habit-tracker-status-bar");
-        this.statusBarItem.onclick = () => this.handleStatusBarClick();
-
-        // Initial update - respect the setting
-        if (this.settings.showStatusBar) {
-            // this.updateStatusBar();
-            // this.debouncedUpdateStatusBar();
-        } else {
-            this.statusBarItem.hide();
-        }
-    }
-
-    toggleStatusBar(enabled: boolean) {
-        if (this.statusBarItem) {
-            if (enabled) {
-                this.statusBarItem.show();
-                this.updateStatusBar();
-            } else {
-                this.statusBarItem.hide();
-            }
-        }
-    }
-
-    async handleStatusBarClick() {
-        // Ensure today's note exists, then open sidebar
-        await this.ensureTodaysNote();
-        await this.activateView();
-    }
-
-    async ensureTodaysNote() {
-        const today = moment();
-        const expectedPath = generateDailyNotePath(today.toDate(), this.settings);
-
-        const existingFile = this.app.vault.getFileByPath(expectedPath);
-        if (!existingFile) {
-            // Create the daily note using the template
-            let templateContent = "---\n\n---\n\n";
-            if (this.settings.dailyNoteTemplate) {
-                const templateFile = this.app.vault.getAbstractFileByPath(this.settings.dailyNoteTemplate);
-                if (templateFile && templateFile instanceof TFile) {
-                    templateContent = await this.app.vault.read(templateFile);
-                    templateContent = templateContent.replace(`<%tp.date.now("YYYY-MM-DD") %>`, today.format("YYYY-MM-DD"));
-                    templateContent += `\nCreated on: ${moment().format("YYYY-MM-DD")} with Property Habits Plugin\n`;
-                }
-            }
-            await this.app.vault.create(expectedPath, templateContent);
-        }
-    }
-
-    async updateStatusBar() {
-        if (Platform.isMobile || !this.statusBarItem || !this.settings.showStatusBar) return;
-
-        // Get active habits with targets
-        const habitsWithTargets = this.settings.trackedHabits.filter((h) => !h.ignored && h.target !== undefined);
-
-        if (habitsWithTargets.length === 0) {
-            this.statusBarItem.empty();
-            return;
-        }
-
-        // Get today's date and check habits
-        const today = moment();
-        const expectedPath = generateDailyNotePath(today.toDate(), this.settings);
-        const file = this.app.vault.getFileByPath(expectedPath);
-
-        this.statusBarItem.empty();
-
-        for (const habit of habitsWithTargets) {
-            const box = this.statusBarItem.createEl("span", {
-                cls: "habit-status-box",
-            });
-
-            let isDone = false;
-
-            if (file && file instanceof TFile) {
-                // File exists, check the actual value
-                try {
-                    const metadata = this.app.metadataCache.getFileCache(file);
-                    const rawValue = metadata?.frontmatter?.[habit.propertyName];
-                    const value = processPropertyValue(habit.widget, rawValue);
-
-                    isDone = this.checkHabitDone(habit, value);
-                } catch {
-                    isDone = false;
-                }
-            }
-
-            // Three states: done (green), undone (red), missing (purple)
-            if (!file) {
-                box.addClass("habit-missing");
-                box.setAttribute("title", `${habit.displayName}: No daily note`);
-            } else {
-                box.addClass(isDone ? "habit-done" : "habit-undone");
-                box.setAttribute("title", `${habit.displayName}: ${isDone ? "Done" : "Not done"}`);
-            }
-        }
-    }
-
-    checkHabitDone(habit: HabitConfig, value: boolean | number | null): boolean {
-        if (habit.target === undefined) return false;
-
-        switch (habit.widget) {
-            case "checkbox":
-                const targetIsChecked = habit.target === 1;
-                return value === targetIsChecked;
-
-            case "number":
-                const numValue = typeof value === "number" ? value : 0;
-                return numValue >= habit.target;
-
-            case "multitext":
-                const countValue = typeof value === "number" ? value : 0;
-                return countValue >= habit.target;
-
-            default:
-                return false;
         }
     }
 }
