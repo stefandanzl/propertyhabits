@@ -7,6 +7,7 @@ export class DailyNotes {
     app: App;
     plugin: HabitTrackerPlugin;
     settings: PluginSettings;
+    MAX_SEARCH_ATTEMPTS = 10;
 
     constructor(app: App, plugin: HabitTrackerPlugin, settings: PluginSettings) {
         this.app = app;
@@ -19,9 +20,11 @@ export class DailyNotes {
      * @param date - The date to get the note for
      * @returns The TFile if it exists, null otherwise
      */
-    getDailyNote(date: moment.Moment): TFile | null {
+    async getDailyNote(date: moment.Moment): Promise<TFile | null> {
         const expectedPath = generateDailyNotePath(date, this.settings);
+        console.log("getDailyNote - date:", date.format("YYYY-MM-DD"), "expectedPath:", expectedPath);
         const file = this.app.vault.getFileByPath(expectedPath);
+        console.log("getDailyNote - file:", file);
 
         if (file instanceof TFile) {
             return file;
@@ -132,4 +135,52 @@ export class DailyNotes {
     //         await this.openDailyNote(todayFile.path);
     //     }
     // }
+
+    async goToPreviousDailyNote(newTab = false) {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) {
+            return;
+        }
+        if (!activeFile.path.startsWith(this.settings.baseDirectory)) {
+            new Notice("Active file is not in the daily notes directory.");
+            return;
+        }
+        const currentFileDate = moment(activeFile.path, this.settings.dateFormatPattern);
+        if (!currentFileDate.isValid()) {
+            return;
+        }
+        for (let i = 1; i <= this.MAX_SEARCH_ATTEMPTS; i++) {
+            const previousDate = currentFileDate.clone().subtract(i, "days");
+            const dailyNote = await this.getDailyNote(previousDate);
+            if (dailyNote) {
+                await this.app.workspace.getLeaf(newTab).openFile(dailyNote);
+                return;
+            }
+        }
+    }
+
+    async goToNextDailyNote() {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) {
+            return;
+        }
+
+        if (!activeFile.path.startsWith(this.settings.baseDirectory)) {
+            return;
+        }
+
+        const currentFileDate = moment(activeFile.path, this.settings.dateFormatPattern);
+        if (!currentFileDate.isValid()) {
+            return;
+        }
+
+        for (let i = 1; i <= this.MAX_SEARCH_ATTEMPTS; i++) {
+            const nextDate = currentFileDate.clone().add(i, "days");
+            const dailyNote = await this.getDailyNote(nextDate);
+            if (dailyNote) {
+                await this.app.workspace.getLeaf().openFile(dailyNote);
+                return;
+            }
+        }
+    }
 }

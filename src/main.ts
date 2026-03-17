@@ -3,7 +3,6 @@ import { DEFAULT_SETTINGS, PluginSettings, VIEW_TYPE_HABIT_TRACKER, HabitConfig 
 import { HabitSidebarView } from "./sidebar-view";
 import { HabitSettingsTab } from "./settings-tab";
 import { HabitDataProcessor } from "./data-processor";
-import { goToPreviousDailyNote, goToNextDailyNote } from "./navigation-commands";
 import { DailyNotes } from "dailynotes";
 import { StatusBar } from "statusbar";
 
@@ -41,14 +40,14 @@ export default class HabitTrackerPlugin extends Plugin {
         this.addRibbonIcon("arrow-left", "Go to previous daily note", (evt: MouseEvent) => {
             if (evt.button === 2) {
                 evt.preventDefault();
-                goToNextDailyNote(this.app, this.settings);
+                this.dailyNotes.goToNextDailyNote();
                 return;
             } else if (evt.button === 1) {
                 evt.preventDefault();
                 this.app.workspace.openPopoutLeaf;
-                goToPreviousDailyNote(this.app, this.settings, true);
+                this.dailyNotes.goToPreviousDailyNote(true);
             } else {
-                goToPreviousDailyNote(this.app, this.settings);
+                this.dailyNotes.goToPreviousDailyNote();
             }
         });
 
@@ -82,13 +81,13 @@ export default class HabitTrackerPlugin extends Plugin {
         this.addCommand({
             id: "go-to-previous-daily-note",
             name: "Go to previous daily note",
-            callback: () => goToPreviousDailyNote(this.app, this.settings),
+            callback: () => this.dailyNotes.goToPreviousDailyNote(),
         });
 
         this.addCommand({
             id: "go-to-next-daily-note",
             name: "Go to next daily note",
-            callback: () => goToNextDailyNote(this.app, this.settings),
+            callback: () => this.dailyNotes.goToNextDailyNote(),
         });
     }
 
