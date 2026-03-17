@@ -1,9 +1,9 @@
-import { Plugin, WorkspaceLeaf, Notice, TFile, moment } from "obsidian";
+import { Plugin, WorkspaceLeaf, Notice, TFile, moment, debounce, Platform } from "obsidian";
 import { DEFAULT_SETTINGS, PluginSettings, VIEW_TYPE_HABIT_TRACKER, HabitConfig } from "./types";
 import { HabitSidebarView } from "./sidebar-view";
 import { HabitSettingsTab } from "./settings-tab";
 import { HabitDataProcessor } from "./data-processor";
-import { debounce, generateDailyNotePath, processPropertyValue } from "./utils";
+import { generateDailyNotePath, processPropertyValue } from "./utils";
 import { goToPreviousDailyNote, goToNextDailyNote } from "./navigation-commands";
 
 export default class HabitTrackerPlugin extends Plugin {
@@ -50,8 +50,10 @@ export default class HabitTrackerPlugin extends Plugin {
         // Register settings tab
         this.addSettingTab(new HabitSettingsTab(this.app, this));
 
-        // Initialize status bar
-        this.initStatusBar();
+        // Initialize status bar (not available on mobile)
+        if (!Platform.isMobile) {
+            this.initStatusBar();
+        }
 
         // Register file modification events for real-time updates
         this.registerEvent(
@@ -208,7 +210,7 @@ export default class HabitTrackerPlugin extends Plugin {
     }
 
     async updateStatusBar() {
-        if (!this.statusBarItem || !this.settings.showStatusBar) return;
+        if (Platform.isMobile || !this.statusBarItem || !this.settings.showStatusBar) return;
 
         // Get active habits with targets
         const habitsWithTargets = this.settings.trackedHabits.filter((h) => !h.ignored && h.target !== undefined);
@@ -244,10 +246,15 @@ export default class HabitTrackerPlugin extends Plugin {
                     isDone = false;
                 }
             }
-            // If file doesn't exist, isDone stays false (red)
 
-            box.addClass(isDone ? "habit-done" : "habit-undone");
-            box.setAttribute("title", `${habit.displayName}: ${isDone ? "Done" : "Not done"}`);
+            // Three states: done (green), undone (red), missing (purple)
+            if (!file) {
+                box.addClass("habit-missing");
+                box.setAttribute("title", `${habit.displayName}: No daily note`);
+            } else {
+                box.addClass(isDone ? "habit-done" : "habit-undone");
+                box.setAttribute("title", `${habit.displayName}: ${isDone ? "Done" : "Not done"}`);
+            }
         }
     }
 

@@ -554,3 +554,7 @@
 .habit-status-box.habit-undone {
     background: #ef4444;
 }
+
+.habit-status-box.habit-missing {
+    background: var(--color-purple);
+}
