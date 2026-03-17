@@ -117,8 +117,10 @@ export class HabitSettingsTab extends PluginSettingTab {
             );
 
         new Setting(section)
-            .setName("Custom Daily Note Command")
-            .setDesc('Middle-click on status bar to run this Obsidian command (e.g., "smartsync:daily-note"). Leave empty to use default behavior.')
+            .setName("Advanced: Custom Daily Note Command")
+            .setDesc(
+                'Define a custom Obsidian from your used daily notes plugin when clicking on status bar (e.g., "daily-notes", "smartsync:daily-note"). Leave empty to use default behavior. For a full list of commands run "this.app.commands.commands" in developer console.'
+            )
             .addText((text) =>
                 text
                     .setPlaceholder("smartsync:daily-note")
