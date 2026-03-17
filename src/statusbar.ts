@@ -18,6 +18,7 @@ export class StatusBar {
         this.plugin.statusBarItem = this.plugin.addStatusBarItem();
         this.plugin.statusBarItem.addClass("habit-tracker-status-bar");
         this.plugin.statusBarItem.onclick = () => this.handleStatusBarClick();
+        this.plugin.statusBarItem.ondblclick = () => this.handleStatusBarClick(true);
 
         // Initial update - respect the setting
         if (this.settings.showStatusBar) {
@@ -39,9 +40,22 @@ export class StatusBar {
         }
     }
 
-    async handleStatusBarClick() {
+    async handleStatusBarClick(doubleClick = false) {
         // Ensure today's note exists, then open sidebar
-        await this.ensureTodaysNote();
+
+        const today = moment();
+        const expectedPath = generateDailyNotePath(today.toDate(), this.settings);
+
+        const existingFile = this.app.vault.getFileByPath(expectedPath);
+
+        if (existingFile) {
+            // Open daily note file
+
+            this.plugin.dailyNotes.openDailyNote(expectedPath);
+        } else if (doubleClick) {
+            // Create new daily note file
+            this.plugin.dailyNotes.createDailyNote("", expectedPath);
+        }
         await this.plugin.activateView();
     }
 
@@ -86,31 +100,11 @@ export class StatusBar {
             // Three states: done (green), undone (red), missing (purple)
             if (!file) {
                 box.addClass("habit-missing");
-                box.setAttribute("title", `${habit.displayName}: No daily note`);
+                box.setAttribute("title", `${habit.displayName}: No daily note - Double click to create it`);
             } else {
                 box.addClass(isDone ? "habit-done" : "habit-undone");
                 box.setAttribute("title", `${habit.displayName}: ${isDone ? "Done" : "Not done"}`);
             }
-        }
-    }
-
-    async ensureTodaysNote() {
-        const today = moment();
-        const expectedPath = generateDailyNotePath(today.toDate(), this.settings);
-
-        const existingFile = this.app.vault.getFileByPath(expectedPath);
-        if (!existingFile) {
-            // Create the daily note using the template
-            let templateContent = "---\n\n---\n\n";
-            if (this.settings.dailyNoteTemplate) {
-                const templateFile = this.app.vault.getAbstractFileByPath(this.settings.dailyNoteTemplate);
-                if (templateFile && templateFile instanceof TFile) {
-                    templateContent = await this.app.vault.read(templateFile);
-                    // templateContent = templateContent.replace(`<%tp.date.now("YYYY-MM-DD") %>`, today.format("YYYY-MM-DD"));
-                    templateContent += `\nCreated on: ${moment().format("YYYY-MM-DD")} with Property Habits Plugin\n`;
-                }
-            }
-            await this.app.vault.create(expectedPath, templateContent);
         }
     }
 
