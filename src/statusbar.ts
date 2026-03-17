@@ -53,26 +53,25 @@ export class StatusBar {
         if (this.settings.customDailyNoteCommand) {
             new Notice("Using custom DailyNote Command!");
             (this.app as AppWithCommands).commands.executeCommandById(this.settings.customDailyNoteCommand);
-            return;
+        } else {
+            // Left click - default behavior
+            // Ensure today's note exists, then open sidebar
+
+            const today = moment();
+            const expectedPath = generateDailyNotePath(today, this.settings);
+
+            const existingFile = this.app.vault.getFileByPath(expectedPath);
+
+            if (existingFile) {
+                // Open daily note file
+
+                this.plugin.dailyNotes.openDailyNote(expectedPath);
+            } else if (doubleClick) {
+                // Create new daily note file
+                this.plugin.dailyNotes.createDailyNote("", expectedPath);
+            }
         }
-
-        // Left click - default behavior
-        // Ensure today's note exists, then open sidebar
-
-        const today = moment();
-        const expectedPath = generateDailyNotePath(today, this.settings);
-
-        const existingFile = this.app.vault.getFileByPath(expectedPath);
-
-        if (existingFile) {
-            // Open daily note file
-
-            this.plugin.dailyNotes.openDailyNote(expectedPath);
-        } else if (doubleClick) {
-            // Create new daily note file
-            this.plugin.dailyNotes.createDailyNote("", expectedPath);
-        }
-        await this.plugin.activateView();
+        this.plugin.activateView();
     }
 
     async updateStatusBar() {
