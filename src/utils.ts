@@ -44,8 +44,8 @@ export function processPropertyValue(widget: string, rawValue: unknown): boolean
     }
 }
 
-export function generateDailyNotePath(date: Date, settings: PluginSettings): string {
-    const momentDate = moment(date);
+export function generateDailyNotePath(momentDate: moment.Moment, settings: PluginSettings): string {
+    // const momentDate = moment(date);
     const formattedPath = momentDate.format(settings.dateFormatPattern);
     return `${settings.baseDirectory}/${formattedPath}.md`;
 }

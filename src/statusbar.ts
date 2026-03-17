@@ -44,7 +44,7 @@ export class StatusBar {
         // Ensure today's note exists, then open sidebar
 
         const today = moment();
-        const expectedPath = generateDailyNotePath(today.toDate(), this.settings);
+        const expectedPath = generateDailyNotePath(today, this.settings);
 
         const existingFile = this.app.vault.getFileByPath(expectedPath);
 
@@ -72,7 +72,7 @@ export class StatusBar {
 
         // Get today's date and check habits
         const today = moment();
-        const expectedPath = generateDailyNotePath(today.toDate(), this.settings);
+        const expectedPath = generateDailyNotePath(today, this.settings);
         const file = this.app.vault.getFileByPath(expectedPath);
 
         this.plugin.statusBarItem.empty();

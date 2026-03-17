@@ -3,7 +3,6 @@ import { DEFAULT_SETTINGS, PluginSettings, VIEW_TYPE_HABIT_TRACKER, HabitConfig 
 import { HabitSidebarView } from "./sidebar-view";
 import { HabitSettingsTab } from "./settings-tab";
 import { HabitDataProcessor } from "./data-processor";
-import { generateDailyNotePath, processPropertyValue } from "./utils";
 import { goToPreviousDailyNote, goToNextDailyNote } from "./navigation-commands";
 import { DailyNotes } from "dailynotes";
 import { StatusBar } from "statusbar";
