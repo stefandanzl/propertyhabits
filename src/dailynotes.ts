@@ -72,28 +72,38 @@ export class DailyNotes {
         if (file && file instanceof TFile) {
             await this.app.workspace.getLeaf().openFile(file as TFile);
 
+            // Fallback behaviour
+            if (propertyName === "") {
+                console.log("No property name was provided");
+                this.app.workspace.getActiveViewOfType(MarkdownView)?.setEphemeralState({
+                    // 2. Triggers the 'setState' branch to focus the PROPERTIES UI
+                    focusMetadata: true,
+                });
+                return;
+            }
             setTimeout(() => {
                 // this.app.workspace.activeEditor?.editor?.scrollTo(0);
-                this.app.workspace.getActiveViewOfType(MarkdownView)?.setEphemeralState({ scroll: 0 });
+                this.app.workspace.getActiveViewOfType(MarkdownView)?.setEphemeralState({
+                    propertyMatches: [{ key: propertyName }],
+                    focus: true,
+                });
                 console.log("SCROLLING TO TOP");
             }, this.plugin.settings.scrollToTopInterval);
 
-            if (propertyName !== "") {
-                const propertyKey = propertyName.toLowerCase();
-                // 1. Find the element using the data-attribute you provided
-                const propertyElement = document.querySelector(`.metadata-property[data-property-key="${propertyKey}"]`);
+            const propertyKey = propertyName.toLowerCase();
+            // 1. Find the element using the data-attribute you provided
+            const propertyElement = document.querySelector(`.metadata-property[data-property-key="${propertyKey}"]`);
 
-                if (propertyElement) {
-                    // 2. Add the class to trigger the CSS animation
-                    propertyElement.classList.add("is-flashing");
+            if (propertyElement) {
+                // 2. Add the class to trigger the CSS animation
+                propertyElement.classList.add("is-flashing");
 
-                    // 3. Remove it after it's done so it can be triggered again later
-                    setTimeout(() => {
-                        propertyElement.classList.remove("is-flashing");
-                    }, 800);
-                } else {
-                    console.log("Property element not found. Make sure the Properties view is visible!");
-                }
+                // 3. Remove it after it's done so it can be triggered again later
+                setTimeout(() => {
+                    propertyElement.classList.remove("is-flashing");
+                }, 300);
+            } else {
+                console.log("Property element not found. Make sure the Properties view is visible!");
             }
         }
     }
