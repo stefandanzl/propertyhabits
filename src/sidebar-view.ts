@@ -189,7 +189,7 @@ export class HabitSidebarView extends ItemView {
 
             if (day.exists) {
                 // Single click for existing files
-                indicator.onclick = () => this.plugin.dailyNotes.openDailyNote(filePath);
+                indicator.onclick = () => this.plugin.dailyNotes.openDailyNote(filePath, habit.propertyName);
             } else {
                 // Double click for non-existing files (to create them)
                 indicator.ondblclick = () => this.plugin.dailyNotes.createDailyNote(day.date, filePath);
@@ -319,7 +319,7 @@ export class HabitSidebarView extends ItemView {
                 const hasValue = hasMultitextValue(day, habit.propertyName, valueData.value);
 
                 if (day.exists) {
-                    indicator.onclick = () => this.plugin.dailyNotes.openDailyNote(filePath);
+                    indicator.onclick = () => this.plugin.dailyNotes.openDailyNote(filePath, habit.propertyName);
 
                     if (hasValue) {
                         indicator.addClass("success");

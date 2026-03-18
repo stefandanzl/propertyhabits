@@ -66,7 +66,7 @@ export class DailyNotes {
      * Open a daily note in the editor
      * @param filePath - The path to the daily note file
      */
-    async openDailyNote(filePath: string) {
+    async openDailyNote(filePath: string, propertyName = "") {
         // File exists, open it
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (file && file instanceof TFile) {
@@ -77,6 +77,24 @@ export class DailyNotes {
                 this.app.workspace.getActiveViewOfType(MarkdownView)?.setEphemeralState({ scroll: 0 });
                 console.log("SCROLLING TO TOP");
             }, this.plugin.settings.scrollToTopInterval);
+
+            if (propertyName !== "") {
+                const propertyKey = propertyName.toLowerCase();
+                // 1. Find the element using the data-attribute you provided
+                const propertyElement = document.querySelector(`.metadata-property[data-property-key="${propertyKey}"]`);
+
+                if (propertyElement) {
+                    // 2. Add the class to trigger the CSS animation
+                    propertyElement.classList.add("is-flashing");
+
+                    // 3. Remove it after it's done so it can be triggered again later
+                    setTimeout(() => {
+                        propertyElement.classList.remove("is-flashing");
+                    }, 800);
+                } else {
+                    console.log("Property element not found. Make sure the Properties view is visible!");
+                }
+            }
         }
     }
 
