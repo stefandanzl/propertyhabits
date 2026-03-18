@@ -68,14 +68,15 @@ export class DailyNotes {
      */
     async openDailyNote(filePath: string, propertyName = "") {
         // File exists, open it
-        const file = this.app.vault.getAbstractFileByPath(filePath);
-        if (file && file instanceof TFile) {
-            await this.app.workspace.getLeaf().openFile(file as TFile);
+        const file = this.app.vault.getFileByPath(filePath);
+        if (file) {
+            const leaf = this.app.workspace.getLeaf();
+            await leaf.openFile(file);
 
             // Fallback behaviour
             if (propertyName === "") {
                 console.log("No property name was provided");
-                this.app.workspace.getActiveViewOfType(MarkdownView)?.setEphemeralState({
+                leaf.setEphemeralState({
                     // 2. Triggers the 'setState' branch to focus the PROPERTIES UI
                     focusMetadata: true,
                 });
@@ -83,7 +84,7 @@ export class DailyNotes {
             }
             setTimeout(() => {
                 // this.app.workspace.activeEditor?.editor?.scrollTo(0);
-                this.app.workspace.getActiveViewOfType(MarkdownView)?.setEphemeralState({
+                leaf.setEphemeralState({
                     propertyMatches: [{ key: propertyName }],
                     focus: true,
                 });
