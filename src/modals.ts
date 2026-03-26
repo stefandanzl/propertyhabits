@@ -17,10 +17,13 @@ export class AddHabitModal extends Modal {
     showInStatusBar = true;
     sortMode: "alphabetical" | "frequency" | "first_occurrence" = "frequency";
     limitValues: number | undefined;
+    multitextNoLabel = false;
     availableProperties: Array<{ name: string; type: string }> = [];
 
     // Container for dynamic fields
     dynamicFieldsContainer: HTMLElement | null = null;
+    // Reference to sort mode setting for enable/disable
+    sortModeSetting: Setting | null = null;
 
     constructor(app: App, dataProcessor: HabitDataProcessor, plugin: HabitTrackerPlugin, onSubmit: (result: HabitConfig) => void) {
         super(app);
@@ -34,7 +37,9 @@ export class AddHabitModal extends Modal {
         this.setTitle("Add New Habit");
 
         if (this.availableProperties.length === 0) {
-            this.contentEl.createDiv().setText("No suitable properties found. Make sure you have checkbox, number, or list properties in your daily notes.");
+            this.contentEl
+                .createDiv()
+                .setText("No suitable properties found. Make sure you have checkbox, number, or list properties in your daily notes.");
 
             new Setting(this.contentEl).addButton((btn) =>
                 btn.setButtonText("Close").onClick(() => {
@@ -50,7 +55,9 @@ export class AddHabitModal extends Modal {
             .setDesc("Select the property from your daily notes to track")
             .addDropdown((dropdown) => {
                 // Filter out already tracked habits and sort alphabetically
-                const untrackedProperties = this.availableProperties.filter((prop) => !this.plugin.settings.trackedHabits.some((habit) => habit.propertyName === prop.name)).sort((a, b) => a.name.localeCompare(b.name));
+                const untrackedProperties = this.availableProperties
+                    .filter((prop) => !this.plugin.settings.trackedHabits.some((habit) => habit.propertyName === prop.name))
+                    .sort((a, b) => a.name.localeCompare(b.name));
 
                 untrackedProperties.forEach((prop) => {
                     dropdown.addOption(prop.name, `${prop.name} (${prop.type})`);
@@ -179,7 +186,8 @@ export class AddHabitModal extends Modal {
                 });
         } else if (this.selectedPropertyType === "multitext") {
             // Multitext-specific fields
-            new Setting(this.dynamicFieldsContainer)
+            // Sort mode setting (create first so we can reference it)
+            this.sortModeSetting = new Setting(this.dynamicFieldsContainer)
                 .setName("Sort mode")
                 .setDesc("How to sort the values in the table view")
                 .addDropdown((dropdown) => {
@@ -191,6 +199,26 @@ export class AddHabitModal extends Modal {
                         this.sortMode = value as "alphabetical" | "frequency" | "first_occurrence";
                     });
                 });
+
+            // Ordered entries toggle
+            new Setting(this.dynamicFieldsContainer)
+                .setName("Disable labels and show values directly")
+                .setDesc("Values are displayed in order without a label column. Best suited for short values.")
+                .addToggle((toggle) => {
+                    toggle.setValue(this.multitextNoLabel);
+                    toggle.onChange((value) => {
+                        this.multitextNoLabel = value;
+                        // Disable sort mode setting when ordered entries is enabled
+                        if (this.sortModeSetting) {
+                            this.sortModeSetting.setDisabled(value);
+                        }
+                    });
+                });
+
+            // Set initial disabled state
+            if (this.multitextNoLabel && this.sortModeSetting) {
+                this.sortModeSetting.setDisabled(true);
+            }
 
             new Setting(this.dynamicFieldsContainer)
                 .setName("Limit values")
@@ -249,6 +277,7 @@ export class AddHabitModal extends Modal {
             showInStatusBar: this.showInStatusBar,
             sortMode: this.sortMode,
             limitValues: this.limitValues,
+            multitextNoLabel: this.multitextNoLabel,
         };
 
         this.close();
@@ -264,6 +293,9 @@ export class EditHabitModal extends Modal {
     plugin: HabitTrackerPlugin;
     habit: HabitConfig;
     onSubmit: (result: HabitConfig) => void;
+
+    // Reference to sort mode setting for enable/disable
+    sortModeSetting: Setting | null = null;
 
     constructor(app: App, plugin: HabitTrackerPlugin, habit: HabitConfig, onSubmit: (result: HabitConfig) => void) {
         super(app);
@@ -323,7 +355,8 @@ export class EditHabitModal extends Modal {
                 });
         } else if (this.habit.widget === "multitext") {
             // Multitext-specific fields
-            new Setting(this.contentEl)
+            // Sort mode setting (create first so we can reference it)
+            this.sortModeSetting = new Setting(this.contentEl)
                 .setName("Sort mode")
                 .setDesc("How to sort the values in the table view")
                 .addDropdown((dropdown) => {
@@ -335,6 +368,26 @@ export class EditHabitModal extends Modal {
                         this.habit.sortMode = value as "alphabetical" | "frequency" | "first_occurrence";
                     });
                 });
+
+            // Ordered entries toggle
+            new Setting(this.contentEl)
+                .setName("Disable labels and show values directly")
+                .setDesc("Values are displayed in order without a label column. Best suited for short values.")
+                .addToggle((toggle) => {
+                    toggle.setValue(this.habit.multitextNoLabel || false);
+                    toggle.onChange((value) => {
+                        this.habit.multitextNoLabel = value;
+                        // Disable sort mode setting when ordered entries is enabled
+                        if (this.sortModeSetting) {
+                            this.sortModeSetting.setDisabled(value);
+                        }
+                    });
+                });
+
+            // Set initial disabled state
+            if (this.habit.multitextNoLabel && this.sortModeSetting) {
+                this.sortModeSetting.setDisabled(true);
+            }
 
             new Setting(this.contentEl)
                 .setName("Limit values")

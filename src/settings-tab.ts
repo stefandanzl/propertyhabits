@@ -264,6 +264,7 @@ export class HabitSettingsTab extends PluginSettingTab {
             await this.plugin.saveSettings();
             this.display(); // Refresh the settings display
             await this.plugin.refreshView();
+            this.plugin.debouncedUpdateStatusBar();
         }
     }
 

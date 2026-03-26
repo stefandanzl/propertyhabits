@@ -12,6 +12,7 @@ export interface HabitConfig {
     // Multitext-specific settings
     sortMode?: "alphabetical" | "frequency" | "first_occurrence";
     limitValues?: number;
+    multitextNoLabel?: boolean; // When true, values are displayed in order without a label column
 }
 
 export interface PluginSettings {

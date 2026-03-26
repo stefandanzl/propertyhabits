@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf, Notice, TFile, moment, MarkdownView } from "obsidian";
 import { VIEW_TYPE_HABIT_TRACKER, TIME_SPANS, HabitData, HabitStats, HabitConfig } from "./types";
 import { HabitDataProcessor } from "./data-processor";
-import { calculateHabitStats, getSuccessClass, extractMultitextValues, hasMultitextValue } from "./utils";
+import { calculateHabitStats, getSuccessClass, extractMultitextValues, hasMultitextValue, extractOrderedMultitextValues } from "./utils";
 import type HabitTrackerPlugin from "./main";
 
 export class HabitSidebarView extends ItemView {
@@ -280,7 +280,13 @@ export class HabitSidebarView extends ItemView {
     }
 
     private renderMultitextTable(container: HTMLElement, habit: HabitConfig) {
-        // Extract unique values sorted by the configured mode
+        // Check if ordered entries mode is enabled
+        if (habit.multitextNoLabel) {
+            this.renderMultitextOrderedTable(container, habit);
+            return;
+        }
+
+        // Original rendering for non-ordered mode
         const uniqueValues = extractMultitextValues(this.habitData, habit.propertyName, habit.sortMode || "frequency", habit.limitValues);
 
         if (uniqueValues.length === 0) {
@@ -336,6 +342,64 @@ export class HabitSidebarView extends ItemView {
                     indicator.title = `${day.date}: No file - Double click to create note`;
                 }
             });
+        });
+    }
+
+    private renderMultitextOrderedTable(container: HTMLElement, habit: HabitConfig) {
+        // Get ordered values for each day
+        const orderedValues = extractOrderedMultitextValues(this.habitData, habit.propertyName);
+        let maxInDay = 0;
+
+        // Check if there's any data
+        const hasAnyData = orderedValues.some((dayValues) => {
+            if (dayValues && dayValues?.length > maxInDay) {
+                maxInDay = dayValues?.length;
+            }
+            return dayValues && dayValues.length > 0;
+        });
+
+        if (!hasAnyData) {
+            const emptyState = container.createDiv("empty-state-area");
+            emptyState.setText("No values found in the selected time period.");
+            return;
+        }
+
+        // Container for the ordered table - columns for days, rows for values
+        const tableContainer = container.createDiv("multitext-ordered-table-container");
+
+        // Create a column for each day
+        this.habitData.forEach((day, dayIndex) => {
+            const dayValues = orderedValues[dayIndex];
+            const dayColumn = tableContainer.createDiv("multitext-ordered-day-column");
+
+            if (!dayValues || dayValues.length === 0) {
+                for (let i = 0; i < maxInDay; i++) {
+                    // Create a placeholder cell for empty days
+                    const cell = dayColumn.createDiv("multitext-ordered-cell empty");
+                    if (day.exists) {
+                        cell.onclick = () => this.plugin.dailyNotes.openDailyNote(day.filePath, habit.propertyName);
+                        cell.title = `${day.date}: No data - Click to open note`;
+                    } else {
+                        cell.ondblclick = () => this.plugin.dailyNotes.createDailyNote(day.date, day.filePath);
+                        cell.title = `${day.date}: No file - Double click to create note`;
+                    }
+                }
+            } else {
+                // Create a cell for each value in this day
+                dayValues.forEach((value) => {
+                    const cell = dayColumn.createDiv("multitext-ordered-cell");
+                    cell.setText(value);
+                    cell.style.cursor = "pointer";
+
+                    if (day.exists) {
+                        cell.onclick = () => this.plugin.dailyNotes.openDailyNote(day.filePath, habit.propertyName);
+                        cell.title = `${day.date}: ${value} - Click to open note`;
+                    } else {
+                        cell.ondblclick = () => this.plugin.dailyNotes.createDailyNote(day.date, day.filePath);
+                        cell.title = `${day.date}: No file - Double click to create note`;
+                    }
+                });
+            }
         });
     }
 

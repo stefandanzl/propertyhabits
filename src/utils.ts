@@ -266,3 +266,17 @@ export function hasMultitextValue(dayData: DayData, propertyName: string, valueT
     }
     return values.some((v) => String(v) === valueToCheck);
 }
+
+/**
+ * Extracts ordered multitext values for ordered entries mode.
+ * Returns a 2D array where each day has an array of its values in order.
+ */
+export function extractOrderedMultitextValues(habitData: HabitData, propertyName: string): (string[] | null)[] {
+    return habitData.map((day) => {
+        const values = day?.multitextValues?.[propertyName];
+        if (Array.isArray(values) && values.length > 0) {
+            return values.map((v) => String(v));
+        }
+        return null;
+    });
+}

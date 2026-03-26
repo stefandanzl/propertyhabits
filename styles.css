@@ -235,6 +235,53 @@
     height: 12px; /* Match timeline-indicator height */
 }
 
+/* Multitext Ordered Table Layout */
+.multitext-ordered-table-container {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    align-items: flex-start;
+    justify-content: flex-end;
+    /* overflow-x: auto; */
+}
+
+.multitext-ordered-day-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.multitext-ordered-cell {
+    border: 2px solid transparent;
+    border-radius: 2px;
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--text-on-accent-inverted);
+    /* color: var(--text-normal); */
+    white-space: nowrap;
+    background: #22c55e;
+    /* background: var(--background-modifier-success); */
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.multitext-ordered-cell:hover {
+    border: 2px solid var(--text-normal);
+}
+
+.multitext-ordered-cell.empty {
+    background: var(--background-modifier-border);
+    min-width: 12px;
+    padding: 0;
+}
+
 .timeline-indicator:hover {
     transform: scale(1.2);
     border: 2px solid var(--text-normal);

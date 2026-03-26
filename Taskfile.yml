@@ -30,6 +30,7 @@ tasks:
             - task: build
             - task: copy
             - task: reload-obsidian
+            - task: date
     copy:
         cmds:
             - cp main.js '{{.DIR_PLUGIN}}/main.js'
@@ -55,6 +56,12 @@ tasks:
             - git add .
             - git commit -m "task"
             - git push
+
+    date:
+        silent: true
+        desc: Print current date
+        cmds:
+            - echo "Finished at {{now | date "15:04:05"}} "
 
     minify:
         cmds:
