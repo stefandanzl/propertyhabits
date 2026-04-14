@@ -2,6 +2,29 @@
    HABIT TRACKER PLUGIN STYLES
    ============================================================================= */
 
+/* =============================================================================
+   CUSTOM CSS VARIABLES
+   Colors defined by this plugin (not using Obsidian variables)
+   ============================================================================= */
+
+:root {
+    /* Success Levels - 5-step scale from best to worst */
+    --propertyhabits-success-high: #22c55e;
+    --propertyhabits-success-medium: #65a30d;
+    --propertyhabits-success-partial: #eab308;
+    --propertyhabits-success-low: #f97316;
+    --propertyhabits-success-poor: #ef4444;
+
+    /* State Colors */
+    --propertyhabits-partial: #eab308;
+    --propertyhabits-failure: #ef4444;
+    --propertyhabits-bad-data: #ef44ef;
+}
+
+/* =============================================================================
+   CORE LAYOUT
+   ============================================================================= */
+
 /* Sidebar View */
 .habit-tracker-view {
     padding: 16px;
@@ -20,7 +43,10 @@
     margin-bottom: 12px;
 }
 
-/* Timespan Selector */
+/* =============================================================================
+   TIMESPAN SELECTOR
+   ============================================================================= */
+
 .timespan-selector {
     display: flex;
     gap: 4px;
@@ -53,7 +79,10 @@
     font-weight: 500;
 }
 
-/* Habit Sections */
+/* =============================================================================
+   HABIT SECTIONS
+   ============================================================================= */
+
 .habit-section {
     margin-bottom: 20px;
     border-radius: 8px;
@@ -83,17 +112,12 @@
     margin: 2px 0;
 }
 
-.habit-stats.success-high {
-    color: #22c55e;
-}
-.habit-stats.success-medium {
-    color: #eab308;
-}
-.habit-stats.success-low {
-    color: #ef4444;
-}
+/* =============================================================================
+   UNIVERSAL TIMELINE & TABLE CONTAINERS
+   These work across all widget types (checkbox, number, multitext, etc.)
+   ============================================================================= */
 
-/* Visual Timeline */
+/* Universal timeline container - applies to all timeline/table layouts */
 .habit-timeline {
     padding: 12px 12px;
     display: flex;
@@ -101,22 +125,148 @@
     gap: 8px;
 }
 
+/* Universal timeline row - horizontal flex container for indicators */
 .timeline-row {
     display: flex;
     gap: 2px;
-    align-items: flex-start; /* Align to top for battery indicators */
-    justify-content: flex-end; /* Align to right so overflow happens on left side */
+    align-items: flex-start;
+    justify-content: flex-end;
 }
 
+/* Universal table container for all table-style layouts */
+.multitext-table-container,
+.multitext-ordered-table-container {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: flex-start;
+    justify-content: flex-end;
+    overflow: hidden;
+}
+
+/* Label containers (left side of tables) */
+.multitext-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+/* Timeline containers (right side of tables) */
+.multitext-timelines {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.multitext-label {
+    background: var(--background-secondary);
+    padding: 2px 0px;
+    border-radius: 2px;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: var(--text-normal);
+    white-space: nowrap;
+    min-width: fit-content;
+    display: flex;
+    align-items: center;
+    height: 12px;
+}
+
+.multitext-ordered-day-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+/* =============================================================================
+   UNIVERSAL INDICATORS & CELLS
+   Base styles for all interactive elements across widget types
+   ============================================================================= */
+
+/* Base timeline indicator */
 .timeline-indicator {
     width: 12px;
     height: 12px;
     border-radius: 2px;
     flex-shrink: 0;
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
-/* Battery-style indicators for number habits */
+/* Base ordered cell */
+.multitext-ordered-cell {
+    border: 2px solid transparent;
+    border-radius: 2px;
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--text-on-accent-inverted);
+    white-space: nowrap;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+/* Universal hover effect */
+.timeline-indicator:hover,
+.multitext-ordered-cell:not(.empty):hover {
+    transform: scale(1.2);
+    border: 2px solid var(--text-normal);
+}
+
+.multitext-ordered-cell.empty {
+    min-width: 12px;
+    padding: 0;
+}
+
+/* =============================================================================
+   UNIVERSAL STATE CLASSES
+   These apply across all widget types for consistent visual feedback
+   ============================================================================= */
+
+/* Success states */
+.timeline-indicator.success,
+.multitext-ordered-cell:not(.empty) {
+    background: var(--propertyhabits-success-high);
+}
+
+/* Partial states */
+.timeline-indicator.partial {
+    background: var(--propertyhabits-partial);
+}
+
+/* Failure/error states */
+.timeline-indicator.failure,
+.timeline-indicator.no-data,
+.timeline-indicator.bad-data {
+    background: var(--propertyhabits-failure);
+}
+
+/* Empty states */
+.timeline-indicator.empty,
+.multitext-ordered-cell.empty {
+    background: var(--background-modifier-border);
+}
+
+/* Missing states (file doesn't exist) */
+.timeline-indicator.missing {
+    background: var(--color-purple);
+}
+
+/* =============================================================================
+   BATTERY-STYLE INDICATORS (Number Widget)
+   ============================================================================= */
+
 .timeline-indicator.battery {
     width: 12px;
     height: 24px;
@@ -126,41 +276,12 @@
     position: relative;
 }
 
-.timeline-indicator > .battery-fill {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #22c55e;
-    transition: height 0.2s ease;
-}
-
-.timeline-indicator > .battery-fill.success-high {
-    background: #22c55e;
-}
-
-.timeline-indicator > .battery-fill.success-medium {
-    background: #65a30d;
-}
-
-.timeline-indicator > .battery-fill.success-partial {
-    background: #eab308;
-}
-
-.timeline-indicator > .battery-fill.success-low {
-    background: #f97316;
-}
-
-.timeline-indicator > .battery-fill.success-poor {
-    background: #ef4444;
-}
-
 .timeline-indicator.battery.no-data {
-    background: #ef4444 !important;
+    background: var(--propertyhabits-failure) !important;
 }
 
 .timeline-indicator.battery.bad-data {
-    background: #ef44ef !important;
+    background: var(--propertyhabits-bad-data) !important;
 }
 
 .timeline-indicator.battery.missing {
@@ -177,176 +298,59 @@
     color: var(--text-normal);
 }
 
-.timeline-indicator.success {
-    background: #22c55e;
-}
-.timeline-indicator.partial {
-    background: #eab308;
-}
-.timeline-indicator.failure {
-    background: #ef4444;
-}
-.timeline-indicator.empty {
-    background: var(--background-modifier-border);
+.timeline-indicator > .battery-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--propertyhabits-success-high);
+    transition: height 0.2s ease;
 }
 
-.timeline-indicator.missing {
-    background: var(--color-purple);
+/* Battery fill levels */
+.battery-fill.success-high { background: var(--propertyhabits-success-high); }
+.battery-fill.success-medium { background: var(--propertyhabits-success-medium); }
+.battery-fill.success-partial { background: var(--propertyhabits-success-partial); }
+.battery-fill.success-low { background: var(--propertyhabits-success-low); }
+.battery-fill.success-poor { background: var(--propertyhabits-success-poor); }
+
+/* =============================================================================
+   STATS COLOR CLASSES
+   Used across stats displays and numeric values
+   ============================================================================= */
+
+.habit-stats.success-high,
+.numeric-display.success-high {
+    color: var(--propertyhabits-success-high);
 }
 
-/* Multitext Table Layout */
-.multitext-table-container {
-    display: flex;
-    gap: 8px;
+.habit-stats.success-medium,
+.numeric-display.success-medium {
+    color: var(--propertyhabits-success-medium);
 }
 
-.multitext-labels {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex-shrink: 0;
-    z-index: 10; /* Labels in front */
+.habit-stats.success-low,
+.numeric-display.success-partial {
+    color: var(--propertyhabits-success-partial);
 }
 
-.multitext-timelines {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-    overflow: hidden; /* Container clips overflow */
+.numeric-display.success-low {
+    color: var(--propertyhabits-success-low);
 }
 
-/* Ensure multitext timeline rows align to right */
-.multitext-timelines .timeline-row {
-    justify-content: flex-end;
+.numeric-display.success-poor {
+    color: var(--propertyhabits-success-poor);
 }
 
-.multitext-label {
-    background: var(--background-secondary);
-    padding: 2px 0px;
-    border-radius: 2px;
-    font-size: 0.85em;
-    font-weight: 500;
-    color: var(--text-normal);
-    white-space: nowrap;
-    min-width: fit-content;
-    display: flex;
-    align-items: center;
-    height: 12px; /* Match timeline-indicator height */
-}
-
-/* Multitext Ordered Table Layout */
-.multitext-ordered-table-container {
-    display: flex;
-    flex-direction: row;
-    gap: 2px;
-    align-items: flex-start;
-    justify-content: flex-end;
-    /* overflow-x: auto; */
-}
-
-.multitext-ordered-day-column {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex-shrink: 0;
-}
-
-.multitext-ordered-cell {
-    border: 2px solid transparent;
-    border-radius: 2px;
-    font-size: 0.8em;
-    font-weight: 500;
-    color: var(--text-on-accent-inverted);
-    /* color: var(--text-normal); */
-    white-space: nowrap;
-    background: #22c55e;
-    /* background: var(--background-modifier-success); */
-    cursor: pointer;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: center;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.multitext-ordered-cell:hover {
-    border: 2px solid var(--text-normal);
-}
-
-.multitext-ordered-cell.empty {
-    background: var(--background-modifier-border);
-    min-width: 12px;
-    padding: 0;
-}
-
-.timeline-indicator:hover {
-    transform: scale(1.2);
-    border: 2px solid var(--text-normal);
-}
-
-/* Progress bars for numeric habits */
-/*
-.progress-bar {
-    height: 8px;
-    background: var(--background-modifier-border);
-    border-radius: 4px;
-    overflow: hidden;
-    margin: 4px 0;
-}
-
-.progress-fill {
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-
-.progress-fill.success-high {
-    background: #22c55e;
-}
-.progress-fill.success-medium {
-    background: #65a30d;
-}
-.progress-fill.success-partial {
-    background: #eab308;
-}
-.progress-fill.success-low {
-    background: #f97316;
-}
-.progress-fill.success-poor {
-    background: #ef4444;
-}
-*/
-
-/* Numeric habit display */
 .numeric-display {
     font-family: var(--font-monospace);
     font-weight: 500;
     font-size: 0.9em;
 }
 
-.numeric-display.success-high {
-    color: #22c55e;
-}
-.numeric-display.success-medium {
-    color: #65a30d;
-}
-.numeric-display.success-partial {
-    color: #eab308;
-}
-.numeric-display.success-low {
-    color: #f97316;
-}
-.numeric-display.success-poor {
-    color: #ef4444;
-}
-
-/* Settings Tab Styles */
-/*.habit-settings-container {
-	max-width: 600px;
-} */
+/* =============================================================================
+   SETTINGS TAB STYLES
+   ============================================================================= */
 
 .setting-section {
     margin-bottom: 24px;
@@ -484,7 +488,6 @@
 /* Empty states */
 .empty-state-area {
     text-align: center;
-    /* padding: 32px; */
     color: var(--text-muted);
 }
 
@@ -514,54 +517,6 @@
 @keyframes spin {
     to {
         transform: rotate(360deg);
-    }
-}
-
-/* Responsive adjustments */
-@media (max-width: 400px) {
-    .timespan-selector {
-        flex-wrap: wrap;
-    }
-
-    .timespan-button {
-        min-width: 60px;
-    }
-
-    .habit-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    .habit-controls {
-        width: 100%;
-        justify-content: space-between;
-    }
-}
-
-/* Accessibility */
-@media (prefers-reduced-motion: reduce) {
-    .timeline-indicator,
-    .progress-fill,
-    .habit-item {
-        transition: none;
-    }
-
-    .loading-spinner {
-        animation: none;
-    }
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-    .timeline-indicator.success {
-        background: #00ff00;
-    }
-    .timeline-indicator.failure {
-        background: #ff0000;
-    }
-    .timeline-indicator.partial {
-        background: #ffff00;
     }
 }
 
@@ -595,13 +550,63 @@
 }
 
 .habit-status-box.habit-done {
-    background: #22c55e;
+    background: var(--propertyhabits-success-high);
 }
 
 .habit-status-box.habit-undone {
-    background: #ef4444;
+    background: var(--propertyhabits-failure);
 }
 
 .habit-status-box.habit-missing {
     background: var(--color-purple);
+}
+
+/* =============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================= */
+
+@media (max-width: 400px) {
+    .timespan-selector {
+        flex-wrap: wrap;
+    }
+
+    .timespan-button {
+        min-width: 60px;
+    }
+
+    .habit-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .habit-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* =============================================================================
+   ACCESSIBILITY
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .timeline-indicator,
+    .habit-item,
+    .loading-spinner {
+        transition: none;
+        animation: none;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .timeline-indicator.success {
+        background: #00ff00; /* High contrast green - keep as override */
+    }
+    .timeline-indicator.failure {
+        background: #ff0000; /* High contrast red - keep as override */
+    }
+    .timeline-indicator.partial {
+        background: #ffff00; /* High contrast yellow - keep as override */
+    }
 }
