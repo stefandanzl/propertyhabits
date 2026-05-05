@@ -86,15 +86,16 @@
 .habit-section {
     margin-bottom: 20px;
     border-radius: 8px;
-    background: var(--background-primary);
+    /* background: var(--background-primary); */
     border: 1px solid var(--background-modifier-border);
     overflow: hidden;
+    padding: 8px;
 }
 
 .habit-header {
-    padding: 12px 16px;
-    background: var(--background-secondary);
-    border-bottom: 1px solid var(--background-modifier-border);
+    padding: 2px 4px;
+    /* background: var(--background-secondary); */
+    /* border-bottom: 1px solid var(--background-modifier-border); */
 }
 
 .habit-title {
@@ -119,7 +120,7 @@
 
 /* Universal timeline container - applies to all timeline/table layouts */
 .habit-timeline {
-    padding: 12px 12px;
+    padding: 4px 4px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -195,7 +196,7 @@
     border-radius: 2px;
     flex-shrink: 0;
     transition: all 0.2s ease;
-    cursor: pointer;
+    background: var(--background-modifier-border);
 }
 
 /* Base ordered cell */
@@ -246,11 +247,11 @@
 }
 
 /* Failure/error states */
-.timeline-indicator.failure,
+/* .timeline-indicator.failure,
 .timeline-indicator.no-data,
 .timeline-indicator.bad-data {
     background: var(--propertyhabits-failure);
-}
+} */
 
 /* Empty states */
 .timeline-indicator.empty,
@@ -271,13 +272,9 @@
     width: 12px;
     height: 24px;
     border-radius: 3px;
-    background: var(--background-modifier-border) !important;
+    /* background: var(--background-modifier-border) !important; */
     overflow: hidden;
     position: relative;
-}
-
-.timeline-indicator.battery.no-data {
-    background: var(--propertyhabits-failure) !important;
 }
 
 .timeline-indicator.battery.bad-data {
@@ -308,11 +305,21 @@
 }
 
 /* Battery fill levels */
-.battery-fill.success-high { background: var(--propertyhabits-success-high); }
-.battery-fill.success-medium { background: var(--propertyhabits-success-medium); }
-.battery-fill.success-partial { background: var(--propertyhabits-success-partial); }
-.battery-fill.success-low { background: var(--propertyhabits-success-low); }
-.battery-fill.success-poor { background: var(--propertyhabits-success-poor); }
+.battery-fill.success-high {
+    background: var(--propertyhabits-success-high);
+}
+.battery-fill.success-medium {
+    background: var(--propertyhabits-success-medium);
+}
+.battery-fill.success-partial {
+    background: var(--propertyhabits-success-partial);
+}
+.battery-fill.success-low {
+    background: var(--propertyhabits-success-low);
+}
+.battery-fill.success-poor {
+    background: var(--propertyhabits-success-poor);
+}
 
 /* =============================================================================
    STATS COLOR CLASSES
