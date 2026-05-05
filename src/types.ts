@@ -28,6 +28,7 @@ export interface PluginSettings {
     showStatusBar: boolean;
     showHabitStats: boolean;
     showFailuresRed: boolean;
+    showNumberAsBattery: boolean;
     customDailyNoteCommand: string;
 }
 
@@ -90,6 +91,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     showStatusBar: true,
     showHabitStats: true,
     showFailuresRed: true,
+    showNumberAsBattery: true,
     customDailyNoteCommand: "",
 };
 

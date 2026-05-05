@@ -211,57 +211,98 @@ export class HabitSidebarView extends ItemView {
                 const numValue = Number(value);
                 const isNullish = value === null || value === undefined || numValue === 0 || (typeof value === "string" && value === "");
                 const isInvalidNumber = isNaN(numValue);
-                // Always create battery-style visualization for number habits
-                indicator.addClass("battery");
+                indicator.addClass("number");
 
-                if (!day.exists) {
-                    indicator.addClass("missing");
-                    indicator.title = `${day.date}: No file - Double click to create note`;
-                    return;
-                }
-                if (isInvalidNumber) {
-                    // For number habits with no data or zero value, create red battery
-                    indicator.addClass("bad-data");
-                    const valueText = `Bad data entry: Value is ${value}`;
-                    indicator.title = `${day.date}: ${valueText} - Click to open note`;
-                } else if (isNullish) {
-                    // For number habits with no data or zero value, create red battery
-                    indicator.addClass("no-data");
-                    const valueText = numValue === 0 ? "Value is 0" : "No data";
-                    indicator.title = `${day.date}: ${valueText} - Click to open note`;
-                } else {
-                    const numValueDisplay = numValue;
+                if (this.plugin.settings.showNumberAsBattery) {
+                    // Battery-style visualization
+                    indicator.addClass("battery");
 
-                    if (habit.target) {
-                        // When we have a target, show percentage-based fill
-                        const percentage = Math.min((numValue / habit.target) * 100, 100);
-                        const fillElement = indicator.createDiv("battery-fill");
-                        fillElement.style.height = `${percentage}%`;
-
-                        // Set fill color based on success level
-                        if (percentage >= 75) {
-                            fillElement.addClass("success-high");
-                        } else if (percentage >= 50) {
-                            fillElement.addClass("success-medium");
-                        } else if (percentage >= 25) {
-                            fillElement.addClass("success-partial");
-                        } else {
-                            fillElement.addClass("success-low");
-                        }
-
-                        indicator.title = `${day.date}: ${numValue}/${habit.target} (${Math.round(percentage)}%) - Click to open note`;
-                        const targetText = habit.target ? `${habit.target}` : "no target";
-                        indicator.title = `${day.date}: ${numValueDisplay} (target: ${targetText}) - Click to open note`;
+                    if (!day.exists) {
+                        indicator.addClass("missing");
+                        indicator.title = `${day.date}: No file - Double click to create note`;
+                        return;
+                    }
+                    if (isInvalidNumber) {
+                        // For number habits with no data or zero value, create red battery
+                        indicator.addClass("bad-data");
+                        const valueText = `Bad data entry: Value is ${value}`;
+                        indicator.title = `${day.date}: ${valueText} - Click to open note`;
+                    } else if (isNullish) {
+                        // For number habits with no data or zero value, create red battery
+                        indicator.addClass("no-data");
+                        const valueText = numValue === 0 ? "Value is 0" : "No data";
+                        indicator.title = `${day.date}: ${valueText} - Click to open note`;
                     } else {
-                        // When no target or invalid value, show red battery or minimal fill
-                        if (numValue > 0) {
-                            indicator.addClass("raw-data");
-                            indicator.setText(numValue.toString());
+                        const numValueDisplay = numValue;
 
-                            indicator.title = `${day.date}: Value ${numValueDisplay} (no target defined) - Click to open note`;
+                        if (habit.target) {
+                            // When we have a target, show percentage-based fill
+                            const percentage = Math.min((numValue / habit.target) * 100, 100);
+                            const fillElement = indicator.createDiv("battery-fill");
+                            fillElement.style.height = `${percentage}%`;
+
+                            // Set fill color based on success level
+                            if (percentage >= 75) {
+                                fillElement.addClass("success-high");
+                            } else if (percentage >= 50) {
+                                fillElement.addClass("success-medium");
+                            } else if (percentage >= 25) {
+                                fillElement.addClass("success-partial");
+                            } else {
+                                fillElement.addClass("success-low");
+                            }
+
+                            indicator.title = `${day.date}: ${numValue}/${habit.target} (${Math.round(percentage)}%) - Click to open note`;
+                            const targetText = habit.target ? `${habit.target}` : "no target";
+                            indicator.title = `${day.date}: ${numValueDisplay} (target: ${targetText}) - Click to open note`;
                         } else {
-                            // No target and zero/invalid value - completely red
-                            indicator.addClass("no-data");
+                            // When no target or invalid value, show red battery or minimal fill
+                            if (numValue > 0) {
+                                indicator.addClass("raw-data");
+                                indicator.setText(numValue.toString());
+
+                                indicator.title = `${day.date}: Value ${numValueDisplay} (no target defined) - Click to open note`;
+                            } else {
+                                // No target and zero/invalid value - completely red
+                                indicator.addClass("no-data");
+                            }
+                        }
+                    }
+                } else {
+                    // Direct value display (cell style like multitext ordered)
+                    indicator.addClass("value");
+
+                    if (!day.exists) {
+                        indicator.addClass("missing");
+                        indicator.title = `${day.date}: No file - Double click to create note`;
+                        return;
+                    }
+                    if (isInvalidNumber) {
+                        indicator.addClass("bad-data");
+                        indicator.setText("?");
+                        indicator.title = `${day.date}: Bad data entry: ${value} - Click to open note`;
+                    } else if (isNullish) {
+                        indicator.addClass("no-data");
+                        indicator.title = `${day.date}: ${numValue === 0 ? "Value is 0" : "No data"} - Click to open note`;
+                    } else {
+                        // Display the actual value
+                        indicator.setText(numValue.toString());
+
+                        // Set background color based on target if defined
+                        if (habit.target) {
+                            const percentage = Math.min((numValue / habit.target) * 100, 100);
+                            if (percentage >= 75) {
+                                indicator.addClass("success-high");
+                            } else if (percentage >= 50) {
+                                indicator.addClass("success-medium");
+                            } else if (percentage >= 25) {
+                                indicator.addClass("success-partial");
+                            } else {
+                                indicator.addClass("success-low");
+                            }
+                            indicator.title = `${day.date}: ${numValue}/${habit.target} (${Math.round(percentage)}%) - Click to open note`;
+                        } else {
+                            indicator.title = `${day.date}: ${numValue} (no target) - Click to open note`;
                         }
                     }
                 }

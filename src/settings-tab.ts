@@ -162,6 +162,17 @@ export class HabitSettingsTab extends PluginSettingTab {
                     await this.plugin.refreshView();
                 })
             );
+
+        new Setting(section)
+            .setName("Show Number Habits as Battery")
+            .setDesc("When enabled, number habits are shown as battery-style indicators. When disabled, values are displayed directly.")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.showNumberAsBattery).onChange(async (value) => {
+                    this.plugin.settings.showNumberAsBattery = value;
+                    await this.plugin.saveSettings();
+                    await this.plugin.refreshView();
+                })
+            );
     }
 
     private renderHabitsSection(container: HTMLElement) {

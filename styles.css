@@ -200,7 +200,8 @@
 }
 
 /* Base ordered cell */
-.multitext-ordered-cell {
+.multitext-ordered-cell,
+.timeline-indicator.number.value {
     border: 2px solid transparent;
     border-radius: 2px;
     font-size: 0.8em;
@@ -218,14 +219,23 @@
     transition: all 0.2s ease;
 }
 
+/* Number value cell specific styles */
+.timeline-indicator.number.value {
+    width: auto;
+    min-width: 12px;
+    max-width: 40px;
+    padding: 0 2px;
+}
+
 /* Universal hover effect */
-.timeline-indicator:hover,
+.timeline-indicator:hover:not(.battery),
 .multitext-ordered-cell:not(.empty):hover {
     transform: scale(1.2);
     border: 2px solid var(--text-normal);
 }
 
-.multitext-ordered-cell.empty {
+.multitext-ordered-cell.empty,
+.timeline-indicator.number.value.empty {
     min-width: 12px;
     padding: 0;
 }
@@ -237,8 +247,22 @@
 
 /* Success states */
 .timeline-indicator.success,
-.multitext-ordered-cell:not(.empty) {
+.multitext-ordered-cell:not(.empty),
+.timeline-indicator.value.success-high {
     background: var(--propertyhabits-success-high);
+}
+
+/* Success levels for number value cells */
+.timeline-indicator.number.value.success-medium {
+    background: var(--propertyhabits-success-medium);
+}
+
+.timeline-indicator.number.value.success-partial {
+    background: var(--propertyhabits-success-partial);
+}
+
+.timeline-indicator.number.value.success-low {
+    background: var(--propertyhabits-success-low);
 }
 
 /* Partial states */
@@ -261,7 +285,7 @@
 
 /* Missing states (file doesn't exist) */
 .timeline-indicator.missing {
-    background: var(--color-purple);
+    background: var(--color-purple) !important;
 }
 
 /* =============================================================================
