@@ -151,17 +151,8 @@ export class AddHabitModal extends Modal {
         this.dynamicFieldsContainer.empty();
 
         if (this.selectedPropertyType === "checkbox") {
-            // Checkbox-specific fields
-            new Setting(this.dynamicFieldsContainer)
-                .setName("Checkbox Target")
-                .setDesc("Should the target be checked (true) or unchecked (false)?")
-                .addToggle((toggle) => {
-                    toggle.setValue(true); // Default to "checked" as target
-                    toggle.onChange((value) => {
-                        // Store as 1 for checked, 0 for unchecked
-                        this.target = value ? 1 : 0;
-                    });
-                });
+            // Checkbox habits always have target = 1 (checked for success)
+            this.target = 1;
         } else if (this.selectedPropertyType === "number") {
             // Number-specific fields
             new Setting(this.dynamicFieldsContainer)
@@ -320,16 +311,11 @@ export class EditHabitModal extends Modal {
 
         // Render fields based on widget type
         if (this.habit.widget === "checkbox") {
-            // Checkbox-specific fields
-            new Setting(this.contentEl)
-                .setName("Checkbox Target")
-                .setDesc("Should the target be checked (true) or unchecked (false)?")
-                .addToggle((toggle) => {
-                    toggle.setValue(this.habit.target === 1);
-                    toggle.onChange((value) => {
-                        this.habit.target = value ? 1 : 0;
-                    });
-                });
+            // Checkbox habits always have target = 1 (checked for success)
+            // Ensure target is set to 1 if it's not already
+            if (this.habit.target === undefined) {
+                this.habit.target = 1;
+            }
         } else if (this.habit.widget === "number") {
             // Number-specific fields
             new Setting(this.contentEl)

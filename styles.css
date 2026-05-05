@@ -246,12 +246,12 @@
     background: var(--propertyhabits-partial);
 }
 
-/* Failure/error states */
-/* .timeline-indicator.failure,
-.timeline-indicator.no-data,
-.timeline-indicator.bad-data {
+/* Failure/error states - only when show-failures-red setting is enabled */
+.show-failures-red .timeline-indicator.failure,
+.show-failures-red .timeline-indicator.no-data,
+.show-failures-red .timeline-indicator.bad-data {
     background: var(--propertyhabits-failure);
-} */
+}
 
 /* Empty states */
 .timeline-indicator.empty,

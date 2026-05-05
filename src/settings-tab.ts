@@ -22,6 +22,9 @@ export class HabitSettingsTab extends PluginSettingTab {
         // Basic Settings Section
         this.renderBasicSettings(containerEl);
 
+        // Styling Settings Section
+        this.renderStylingSettings(containerEl);
+
         // Habits Configuration Section
         this.renderHabitsSection(containerEl);
     }
@@ -72,16 +75,6 @@ export class HabitSettingsTab extends PluginSettingTab {
             );
 
         new Setting(section)
-            .setName("Show Streaks")
-            .setDesc("Display current streak information for habits")
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.showStreaks).onChange(async (value) => {
-                    this.plugin.settings.showStreaks = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-
-        new Setting(section)
             .setName("Scroll to Top on Daily Note Open")
             .setDesc("Automatically scroll to the top of the daily note when opened in the sidebar")
             .addToggle((toggle) =>
@@ -106,17 +99,6 @@ export class HabitSettingsTab extends PluginSettingTab {
             );
 
         new Setting(section)
-            .setName("Show Status Bar Indicator")
-            .setDesc("Show habit completion status for current day in the status bar")
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.showStatusBar).onChange(async (value) => {
-                    this.plugin.settings.showStatusBar = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.statusBar.toggleStatusBar(value);
-                })
-            );
-
-        new Setting(section)
             .setName("Advanced: Custom Daily Note Command")
             .setDesc(
                 'Define a custom Obsidian from your used daily notes plugin when clicking on status bar (e.g., "daily-notes", "smartsync:daily-note"). Leave empty to use default behavior. For a full list of commands run "this.app.commands.commands" in developer console.'
@@ -129,6 +111,56 @@ export class HabitSettingsTab extends PluginSettingTab {
                         this.plugin.settings.customDailyNoteCommand = value;
                         await this.plugin.saveSettings();
                     })
+            );
+    }
+
+    private renderStylingSettings(container: HTMLElement) {
+        const section = container;
+        const title = section.createDiv("setting-section-title");
+        title.setText("Styling");
+
+        new Setting(section)
+            .setName("Show Streaks")
+            .setDesc("Display current streak information for habits")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.showStreaks).onChange(async (value) => {
+                    this.plugin.settings.showStreaks = value;
+                    await this.plugin.saveSettings();
+                    await this.plugin.refreshView();
+                })
+            );
+
+        new Setting(section)
+            .setName("Show Status Bar Indicator")
+            .setDesc("Show habit completion status for current day in the status bar")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.showStatusBar).onChange(async (value) => {
+                    this.plugin.settings.showStatusBar = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.statusBar.toggleStatusBar(value);
+                })
+            );
+
+        new Setting(section)
+            .setName("Show Habit Stats")
+            .setDesc("Display habit statistics (success rate, averages) in the sidebar panel")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.showHabitStats).onChange(async (value) => {
+                    this.plugin.settings.showHabitStats = value;
+                    await this.plugin.saveSettings();
+                    await this.plugin.refreshView();
+                })
+            );
+
+        new Setting(section)
+            .setName("Show Failures and Empty with Red Color")
+            .setDesc("When enabled, failed habits, empty/no-data days, and bad data entries are highlighted in red")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.showFailuresRed).onChange(async (value) => {
+                    this.plugin.settings.showFailuresRed = value;
+                    await this.plugin.saveSettings();
+                    await this.plugin.refreshView();
+                })
             );
     }
 

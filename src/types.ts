@@ -26,6 +26,8 @@ export interface PluginSettings {
     scrollToTop: boolean;
     scrollToTopInterval: number;
     showStatusBar: boolean;
+    showHabitStats: boolean;
+    showFailuresRed: boolean;
     customDailyNoteCommand: string;
 }
 
@@ -86,6 +88,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     scrollToTop: true,
     scrollToTopInterval: 0,
     showStatusBar: true,
+    showHabitStats: true,
+    showFailuresRed: true,
     customDailyNoteCommand: "",
 };
 

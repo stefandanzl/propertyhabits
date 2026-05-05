@@ -56,6 +56,9 @@ export class HabitSidebarView extends ItemView {
         contentEl.empty();
         contentEl.addClass("habit-tracker-view");
 
+        // Add class for red failures styling if enabled
+        contentEl.toggleClass("show-failures-red", this.plugin.settings.showFailuresRed);
+
         // Header
         this.renderHeader(contentEl);
 
@@ -122,39 +125,44 @@ export class HabitSidebarView extends ItemView {
         const title = header.createDiv("habit-title");
         title.setText(habit.displayName);
 
+        // Calculate stats (needed for both display and streak info)
         const stats = this.calculateStats(habit);
-        const statsEl = header.createDiv("habit-stats");
-        statsEl.addClass(getSuccessClass(stats.successRate));
 
-        if (habit.widget === "checkbox") {
-            if (habit.target !== undefined) {
-                const targetText = habit.target === 0 ? "unchecked" : "checked";
-                statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%) - target: ${targetText}`);
-            } else {
-                statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%)`);
-            }
-        } else if (habit.widget === "number" && habit.target) {
-            if (habit.isTotal) {
-                statsEl.setText(`Total: ${stats.totalValue}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`);
-            } else {
-                const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : "0";
-                statsEl.setText(`Avg: ${avgDisplay}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`);
-            }
-        } else if (habit.widget === "multitext") {
-            if (habit.target) {
+        // Stats display (shown if setting is enabled)
+        if (this.plugin.settings.showHabitStats) {
+            const statsEl = header.createDiv("habit-stats");
+            statsEl.addClass(getSuccessClass(stats.successRate));
+
+            if (habit.widget === "checkbox") {
+                if (habit.target !== undefined) {
+                    const targetText = habit.target === 0 ? "unchecked" : "checked";
+                    statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%) - target: ${targetText}`);
+                } else {
+                    statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%)`);
+                }
+            } else if (habit.widget === "number" && habit.target) {
                 if (habit.isTotal) {
-                    statsEl.setText(`Total: ${stats.totalValue}/${habit.target} items (${stats.targetAchievement}%) - target: ${habit.target}`);
+                    statsEl.setText(`Total: ${stats.totalValue}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`);
                 } else {
                     const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : "0";
-                    statsEl.setText(`Avg: ${avgDisplay}/${habit.target} items (${stats.targetAchievement}%) - target: ${habit.target}`);
+                    statsEl.setText(`Avg: ${avgDisplay}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`);
                 }
-            } else {
-                if (habit.isTotal) {
-                    statsEl.setText(`Total: ${stats.totalValue} items`);
-                } /*else {
-                    const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : "0";
-                    statsEl.setText(`Avg: ${avgDisplay} items`);
-                }*/
+            } else if (habit.widget === "multitext") {
+                if (habit.target) {
+                    if (habit.isTotal) {
+                        statsEl.setText(`Total: ${stats.totalValue}/${habit.target} items (${stats.targetAchievement}%) - target: ${habit.target}`);
+                    } else {
+                        const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : "0";
+                        statsEl.setText(`Avg: ${avgDisplay}/${habit.target} items (${stats.targetAchievement}%) - target: ${habit.target}`);
+                    }
+                } else {
+                    if (habit.isTotal) {
+                        statsEl.setText(`Total: ${stats.totalValue} items`);
+                    } /*else {
+                        const avgDisplay = stats.averageValue ? stats.averageValue.toFixed(1) : "0";
+                        statsEl.setText(`Avg: ${avgDisplay} items`);
+                    }*/
+                }
             }
         }
 
