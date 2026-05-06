@@ -116,10 +116,12 @@ export class StatusBar {
             // Three states: done (green), undone (red), missing (purple)
             if (!file) {
                 box.addClass("habit-missing");
-                box.setAttribute("title", `${habit.displayName}: No daily note - Double click to create it`);
+                box.ariaLabel = `${habit.displayName}: No daily note - Double click to create it`;
+                box.setAttribute("data-tooltip-position", "top");
             } else {
                 box.addClass(isDone ? "habit-done" : "habit-undone");
-                box.setAttribute("title", `${habit.displayName}: ${isDone ? "Done" : "Not done"}`);
+                box.ariaLabel = `${habit.displayName}: ${isDone ? "Done" : "Not done"}`;
+                box.setAttribute("data-tooltip-position", "top");
             }
         }
     }

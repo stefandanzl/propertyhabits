@@ -564,9 +564,9 @@
     transition: opacity 0.2s ease;
 }
 
-.habit-tracker-status-bar:hover {
+/* .habit-tracker-status-bar:hover {
     opacity: 0.8;
-}
+} */
 
 .habit-status-box {
     width: 10px;

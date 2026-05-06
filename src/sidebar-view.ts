@@ -60,7 +60,7 @@ export class HabitSidebarView extends ItemView {
         contentEl.toggleClass("show-failures-red", this.plugin.settings.showFailuresRed);
 
         // Header
-        this.renderHeader(contentEl);
+        // this.renderHeader(contentEl);
 
         // Timespan selector
         this.renderTimeSpanSelector(contentEl);
@@ -124,6 +124,9 @@ export class HabitSidebarView extends ItemView {
         const header = section.createDiv("habit-header");
         const title = header.createDiv("habit-title");
         title.setText(habit.displayName);
+        const property = habit.propertyName !== habit.displayName ? `, ${habit.propertyName}` : "";
+        title.ariaLabel = `${habit.displayName}${property}, ${habit.widget}`;
+        title.setAttr("data-tooltip-position", "top");
 
         // Calculate stats (needed for both display and streak info)
         const stats = this.calculateStats(habit);
@@ -219,19 +222,19 @@ export class HabitSidebarView extends ItemView {
 
                     if (!day.exists) {
                         indicator.addClass("missing");
-                        indicator.title = `${day.date}: No file - Double click to create note`;
+                        indicator.ariaLabel = `${day.date}: No file - Double click to create note`;
                         return;
                     }
                     if (isInvalidNumber) {
                         // For number habits with no data or zero value, create red battery
                         indicator.addClass("bad-data");
                         const valueText = `Bad data entry: Value is ${value}`;
-                        indicator.title = `${day.date}: ${valueText} - Click to open note`;
+                        indicator.ariaLabel = `${day.date}: ${valueText}`;
                     } else if (isNullish) {
                         // For number habits with no data or zero value, create red battery
                         indicator.addClass("no-data");
                         const valueText = numValue === 0 ? "Value is 0" : "No data";
-                        indicator.title = `${day.date}: ${valueText} - Click to open note`;
+                        indicator.ariaLabel = `${day.date}: ${valueText}`;
                     } else {
                         const numValueDisplay = numValue;
 
@@ -252,16 +255,16 @@ export class HabitSidebarView extends ItemView {
                                 fillElement.addClass("success-low");
                             }
 
-                            indicator.title = `${day.date}: ${numValue}/${habit.target} (${Math.round(percentage)}%) - Click to open note`;
+                            indicator.ariaLabel = `${day.date}: ${numValue}/${habit.target} (${Math.round(percentage)}%)`;
                             const targetText = habit.target ? `${habit.target}` : "no target";
-                            indicator.title = `${day.date}: ${numValueDisplay} (target: ${targetText}) - Click to open note`;
+                            indicator.ariaLabel = `${day.date}: ${numValueDisplay} (target: ${targetText})`;
                         } else {
                             // When no target or invalid value, show red battery or minimal fill
                             if (numValue > 0) {
                                 indicator.addClass("raw-data");
                                 indicator.setText(numValue.toString());
 
-                                indicator.title = `${day.date}: Value ${numValueDisplay} (no target defined) - Click to open note`;
+                                indicator.ariaLabel = `${day.date}: Value ${numValueDisplay} (no target defined)`;
                             } else {
                                 // No target and zero/invalid value - completely red
                                 indicator.addClass("no-data");
@@ -274,16 +277,16 @@ export class HabitSidebarView extends ItemView {
 
                     if (!day.exists) {
                         indicator.addClass("missing");
-                        indicator.title = `${day.date}: No file - Double click to create note`;
+                        indicator.ariaLabel = `${day.date}: No file - Double click to create note`;
                         return;
                     }
                     if (isInvalidNumber) {
                         indicator.addClass("bad-data");
                         indicator.setText("?");
-                        indicator.title = `${day.date}: Bad data entry: ${value} - Click to open note`;
+                        indicator.ariaLabel = `${day.date}: Bad data entry: ${value}`;
                     } else if (isNullish) {
                         indicator.addClass("no-data");
-                        indicator.title = `${day.date}: ${numValue === 0 ? "Value is 0" : "No data"} - Click to open note`;
+                        indicator.ariaLabel = `${day.date}: ${numValue === 0 ? "Value is 0" : "No data"}`;
                     } else {
                         // Display the actual value
                         indicator.setText(numValue.toString());
@@ -300,9 +303,9 @@ export class HabitSidebarView extends ItemView {
                             } else {
                                 indicator.addClass("success-low");
                             }
-                            indicator.title = `${day.date}: ${numValue}/${habit.target} (${Math.round(percentage)}%) - Click to open note`;
+                            indicator.ariaLabel = `${day.date}: ${numValue}/${habit.target} (${Math.round(percentage)}%)`;
                         } else {
-                            indicator.title = `${day.date}: ${numValue} (no target) - Click to open note`;
+                            indicator.ariaLabel = `${day.date}: ${numValue} (no target)`;
                         }
                     }
                 }
@@ -315,14 +318,14 @@ export class HabitSidebarView extends ItemView {
                 if (day.exists) {
                     if (isSuccess) {
                         indicator.addClass("success");
-                        indicator.title = `${day.date}: ${boolValue ? "✓" : "✗"} - Click to open note`;
+                        indicator.ariaLabel = `${day.date}: ${boolValue ? "✓" : "✗"}`;
                     } else {
                         indicator.addClass("failure");
-                        indicator.title = `${day.date}: ${boolValue ? "✓" : "✗"} - Click to open note`;
+                        indicator.ariaLabel = `${day.date}: ${boolValue ? "✓" : "✗"}`;
                     }
                 } else {
                     indicator.addClass("missing");
-                    indicator.title = `${day.date}: No file - Double click to create note`;
+                    indicator.ariaLabel = `${day.date}: No file - Double click to create note`;
                 }
             }
         });
@@ -358,7 +361,7 @@ export class HabitSidebarView extends ItemView {
             // Label row
             const labelCell = labelsContainer.createDiv("multitext-label");
             labelCell.setText(valueData.value);
-            labelCell.title = `${valueData.value} (${valueData.count} occurrences)`;
+            labelCell.ariaLabel = `${valueData.value} (${valueData.count} occurrences)`;
 
             // Timeline row (indicators)
             const timelineRow = timelinesContainer.createDiv("timeline-row");
@@ -378,17 +381,17 @@ export class HabitSidebarView extends ItemView {
 
                     if (hasValue) {
                         indicator.addClass("success");
-                        indicator.title = `${day.date}: ${valueData.value} - Click to open note`;
+                        indicator.ariaLabel = `${day.date}: ${valueData.value}`;
                     } else {
                         indicator.addClass("empty");
-                        indicator.title = `${day.date}: No data - Click to open note`;
+                        indicator.ariaLabel = `${day.date}: No data`;
                     }
                 } else {
                     indicator.ondblclick = () => this.plugin.dailyNotes.createDailyNote(day.date, filePath);
                     indicator.style.cursor = "copy";
 
                     indicator.addClass("missing");
-                    indicator.title = `${day.date}: No file - Double click to create note`;
+                    indicator.ariaLabel = `${day.date}: No file - Double click to create note`;
                 }
             });
         });
@@ -427,10 +430,10 @@ export class HabitSidebarView extends ItemView {
                     const cell = dayColumn.createDiv("multitext-ordered-cell empty");
                     if (day.exists) {
                         cell.onclick = () => this.plugin.dailyNotes.openDailyNote(day.filePath, habit.propertyName);
-                        cell.title = `${day.date}: No data - Click to open note`;
+                        cell.ariaLabel = `${day.date}: No data`;
                     } else {
                         cell.ondblclick = () => this.plugin.dailyNotes.createDailyNote(day.date, day.filePath);
-                        cell.title = `${day.date}: No file - Double click to create note`;
+                        cell.ariaLabel = `${day.date}: No file - Double click to create note`;
                     }
                 }
             } else {
@@ -442,10 +445,10 @@ export class HabitSidebarView extends ItemView {
 
                     if (day.exists) {
                         cell.onclick = () => this.plugin.dailyNotes.openDailyNote(day.filePath, habit.propertyName);
-                        cell.title = `${day.date}: ${value} - Click to open note`;
+                        cell.ariaLabel = `${day.date}: ${value}`;
                     } else {
                         cell.ondblclick = () => this.plugin.dailyNotes.createDailyNote(day.date, day.filePath);
-                        cell.title = `${day.date}: No file - Double click to create note`;
+                        cell.ariaLabel = `${day.date}: No file - Double click to create note`;
                     }
                 });
             }
