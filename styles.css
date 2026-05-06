@@ -19,6 +19,8 @@
     --propertyhabits-partial: #eab308;
     --propertyhabits-failure: #ef4444;
     --propertyhabits-bad-data: #ef44ef;
+
+    ---propertyhabits-hover-scale: 1.3;
 }
 
 /* =============================================================================
@@ -142,7 +144,6 @@
     gap: 8px;
     align-items: flex-start;
     justify-content: flex-end;
-    overflow: hidden;
 }
 
 /* Label containers (left side of tables) */
@@ -160,7 +161,6 @@
     flex-direction: column;
     gap: 4px;
     flex: 1;
-    overflow: hidden;
 }
 
 .multitext-label {
@@ -230,8 +230,9 @@
 /* Universal hover effect */
 .timeline-indicator:hover:not(.battery),
 .multitext-ordered-cell:not(.empty):hover {
-    transform: scale(1.2);
-    border: 2px solid var(--text-normal);
+    transform: scale(var(---propertyhabits-hover-scale));
+    /* border: 1px solid var(--text-normal); */
+    box-shadow: 0 0 0 1px var(--text-normal);
 }
 
 .multitext-ordered-cell.empty,
@@ -577,7 +578,9 @@
 }
 
 .habit-status-box:hover {
-    transform: scale(1.3);
+    transform: scale(var(---propertyhabits-hover-scale));
+    /* border: 1px solid var(--text-normal); */
+    box-shadow: 0 0 0 1px var(--text-normal);
 }
 
 .habit-status-box.habit-done {

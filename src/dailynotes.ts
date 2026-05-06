@@ -1,4 +1,5 @@
-import { App, MarkdownView, Notice, TFile, moment } from "obsidian";
+import type { Moment } from "moment";
+import { App, MarkdownView, Notice, TFile } from "obsidian";
 import { PluginSettings } from "./types";
 import { generateDailyNotePath } from "./utils";
 import HabitTrackerPlugin from "main";
@@ -20,7 +21,7 @@ export class DailyNotes {
      * @param date - The date to get the note for
      * @returns The TFile if it exists, null otherwise
      */
-    async getDailyNote(date: moment.Moment): Promise<TFile | null> {
+    async getDailyNote(date: Moment): Promise<TFile | null> {
         const expectedPath = generateDailyNotePath(date, this.settings);
         const file = this.app.vault.getFileByPath(expectedPath);
 
@@ -123,7 +124,7 @@ export class DailyNotes {
                         date
                     );
 */
-                    templateContent += `\nCreated on: ${moment().format("YYYY-MM-DD")} with Property Habits Plugin\n`;
+                    templateContent += `\nCreated on: ${window.moment().format("YYYY-MM-DD")} with Property Habits Plugin\n`;
                 }
             }
             await this.app.vault.create(filepath, templateContent);
@@ -172,7 +173,7 @@ export class DailyNotes {
             new Notice("Active file is not in the daily notes directory.");
             return;
         }
-        const currentFileDate = moment(activeFile.path, this.settings.dateFormatPattern);
+        const currentFileDate = window.moment(activeFile.path, this.settings.dateFormatPattern);
         if (!currentFileDate.isValid()) {
             return;
         }
@@ -196,7 +197,7 @@ export class DailyNotes {
             return;
         }
 
-        const currentFileDate = moment(activeFile.path, this.settings.dateFormatPattern);
+        const currentFileDate = window.moment(activeFile.path, this.settings.dateFormatPattern);
         if (!currentFileDate.isValid()) {
             return;
         }

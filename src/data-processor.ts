@@ -1,4 +1,4 @@
-import { App, moment, TFile } from "obsidian";
+import { App, TFile } from "obsidian";
 import { HabitData, PluginSettings, TIME_SPANS, Habits } from "./types";
 import { handleError, processPropertyValue, generateDailyNotePath } from "./utils";
 
@@ -23,8 +23,8 @@ export class HabitDataProcessor {
         startDate.setDate(endDate.getDate() - timeSpan.days + 1);
 
         // const filePaths: string[] = [];
-        const current = moment(startDate);
-        const end = moment(endDate);
+        const current = window.moment(startDate);
+        const end = window.moment(endDate);
 
         const habitData: HabitData = [];
 

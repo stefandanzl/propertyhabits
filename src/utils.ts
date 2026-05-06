@@ -1,4 +1,4 @@
-import { moment } from "obsidian";
+import type { Moment } from "moment";
 import { HabitConfig, HabitData, HabitStats, PluginSettings, MultitextValueData, DayData } from "./types";
 
 export function handleError(message: string, context?: unknown) {
@@ -44,7 +44,7 @@ export function processPropertyValue(widget: string, rawValue: unknown): boolean
     }
 }
 
-export function generateDailyNotePath(momentDate: moment.Moment, settings: PluginSettings): string {
+export function generateDailyNotePath(momentDate: Moment, settings: PluginSettings): string {
     // const momentDate = moment(date);
     const formattedPath = momentDate.format(settings.dateFormatPattern);
     return `${settings.baseDirectory}/${formattedPath}.md`;
@@ -195,7 +195,7 @@ export function calculateHabitStats(habitData: HabitData, habitConfig: HabitConf
 }
 
 export function debounce<T extends (...args: unknown[]) => unknown>(func: T, wait: number): (...args: Parameters<T>) => void {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     return (...args: Parameters<T>) => {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
