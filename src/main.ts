@@ -89,6 +89,12 @@ export default class HabitTrackerPlugin extends Plugin {
             name: "Go to next daily note",
             callback: () => this.dailyNotes.goToNextDailyNote(),
         });
+
+        this.addCommand({
+            id: "open-daily-note-on-date",
+            name: "Open daily note on date",
+            callback: () => this.dailyNotes.openDailyNoteModal(),
+        });
     }
 
     onunload() {

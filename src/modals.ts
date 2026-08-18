@@ -1,7 +1,88 @@
-import { App, Modal, Setting, Notice } from "obsidian";
+import { App, Modal, Setting, Notice, FuzzySuggestModal } from "obsidian";
+import type { Moment } from "moment";
 import { HabitConfig } from "./types";
 import { HabitDataProcessor } from "./data-processor";
 import HabitTrackerPlugin from "main";
+
+export interface MissingNoteOption {
+    action: "create" | "skip";
+    label: string;
+}
+
+/**
+ * Shown by the previous/next daily note commands when the adjacent day's note
+ * is missing. Enter (first item) creates exactly that day; the second item
+ * keeps the old skip-to-next-existing behavior. Esc cancels.
+ */
+export class MissingDailyNoteModal extends FuzzySuggestModal<MissingNoteOption> {
+    private options: MissingNoteOption[];
+    private onChooseAction: (action: "create" | "skip") => void;
+
+    constructor(
+        app: App,
+        missingDate: string,
+        nextExistingDate: string | null,
+        direction: "previous" | "next",
+        onChooseAction: (action: "create" | "skip") => void
+    ) {
+        super(app);
+        this.onChooseAction = onChooseAction;
+        this.options = [{ action: "create", label: `Create ${missingDate}` }];
+        if (nextExistingDate) {
+            this.options.push({
+                action: "skip",
+                label: `Skip to ${direction} existing note (${nextExistingDate})`,
+            });
+        }
+        this.setPlaceholder(`No daily note for ${missingDate} — Enter to create`);
+    }
+
+    getItems(): MissingNoteOption[] {
+        return this.options;
+    }
+
+    getItemText(item: MissingNoteOption): string {
+        return item.label;
+    }
+
+    onChooseItem(item: MissingNoteOption): void {
+        this.onChooseAction(item.action);
+    }
+}
+
+export interface DailyNoteDateOption {
+    date: Moment;
+    exists: boolean;
+    label: string;
+}
+
+/**
+ * Fuzzy-searchable list of dates to open (or create) a daily note for.
+ * Items are prebuilt by the caller; choosing one delegates back.
+ */
+export class OpenDailyNoteModal extends FuzzySuggestModal<DailyNoteDateOption> {
+    private items: DailyNoteDateOption[];
+    private onChooseOption: (option: DailyNoteDateOption) => void;
+
+    constructor(app: App, items: DailyNoteDateOption[], onChooseOption: (option: DailyNoteDateOption) => void) {
+        super(app);
+        this.items = items;
+        this.onChooseOption = onChooseOption;
+        this.setPlaceholder("Open or create daily note on date…");
+    }
+
+    getItems(): DailyNoteDateOption[] {
+        return this.items;
+    }
+
+    getItemText(item: DailyNoteDateOption): string {
+        return item.label;
+    }
+
+    onChooseItem(item: DailyNoteDateOption): void {
+        this.onChooseOption(item);
+    }
+}
 
 export class AddHabitModal extends Modal {
     result: HabitConfig | null = null;
