@@ -58,6 +58,11 @@ export class StatusBar {
             // Left click - default behavior
             // Ensure today's note exists, then open sidebar
 
+            // Clicking a specific box targets that habit's property;
+            // clicking anywhere else on the bar falls back to the default (no property)
+            const box = (event.target as HTMLElement).closest(".habit-status-box");
+            const propertyName = box?.getAttribute("data-property-name") ?? "";
+
             const today = window.moment();
             const expectedPath = generateDailyNotePath(today, this.settings);
 
@@ -66,10 +71,10 @@ export class StatusBar {
             if (existingFile) {
                 // Open daily note file
 
-                this.plugin.dailyNotes.openDailyNote(expectedPath);
+                this.plugin.dailyNotes.openDailyNote(expectedPath, propertyName);
             } else if (doubleClick) {
                 // Create new daily note file
-                this.plugin.dailyNotes.createDailyNote("", expectedPath);
+                this.plugin.dailyNotes.createDailyNote("", expectedPath, propertyName);
             }
         }
         this.plugin.activateView();
@@ -97,6 +102,7 @@ export class StatusBar {
             const box = this.plugin.statusBarItem.createEl("span", {
                 cls: "habit-status-box",
             });
+            box.dataset.propertyName = habit.propertyName;
 
             let isDone = false;
 

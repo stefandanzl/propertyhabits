@@ -1,5 +1,5 @@
 import type { Moment } from "moment";
-import { App, MarkdownView, Notice, TFile } from "obsidian";
+import { App, MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { PluginSettings } from "./types";
 import { generateDailyNotePath } from "./utils";
 import HabitTrackerPlugin from "main";
@@ -71,8 +71,21 @@ export class DailyNotes {
         // File exists, open it
         const file = this.app.vault.getFileByPath(filePath);
         if (file) {
-            const leaf = this.app.workspace.getLeaf();
-            await leaf.openFile(file);
+            // Try to reuse a tab that already shows this note — getLeaf() would
+            // otherwise open a new tab when the active one is pinned
+            const existingLeaf = this.app.workspace
+                .getLeavesOfType("markdown")
+                .find((l) => (l.view.getState() as { file?: string })?.file === filePath);
+
+            let leaf: WorkspaceLeaf;
+            if (existingLeaf) {
+                this.app.workspace.setActiveLeaf(existingLeaf, { focus: true });
+                this.app.workspace.revealLeaf(existingLeaf);
+                leaf = existingLeaf;
+            } else {
+                leaf = this.app.workspace.getLeaf(false);
+                await leaf.openFile(file);
+            }
 
             // Fallback behaviour
             if (propertyName === "") {
@@ -110,7 +123,7 @@ export class DailyNotes {
         }
     }
 
-    async createDailyNote(date: string, filepath: string) {
+    async createDailyNote(date: string, filepath: string, propertyName = "") {
         try {
             let templateContent = "---\n\n---\n\n";
             if (this.plugin.settings.dailyNoteTemplate) {
@@ -130,7 +143,7 @@ export class DailyNotes {
             await this.app.vault.create(filepath, templateContent);
             new Notice(`Daily note created: ${filepath}`);
             // Open the newly created daily note
-            this.openDailyNote(filepath);
+            this.openDailyNote(filepath, propertyName);
             this.plugin.refreshView();
         } catch (error) {
             console.error(`Failed to create daily note ${filepath} :`, error);
