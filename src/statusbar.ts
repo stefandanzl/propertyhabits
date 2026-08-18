@@ -77,7 +77,9 @@ export class StatusBar {
                 this.plugin.dailyNotes.createDailyNote("", expectedPath, propertyName);
             }
         }
-        this.plugin.activateView();
+        if (this.settings.statusBarClickOpensPanel) {
+            this.plugin.activateView();
+        }
     }
 
     async updateStatusBar() {

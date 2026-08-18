@@ -79,21 +79,33 @@ export default class HabitTrackerPlugin extends Plugin {
         });
 
         this.addCommand({
-            id: "go-to-previous-daily-note",
+            id: "daily-note-previous",
             name: "Go to previous daily note",
             callback: () => this.dailyNotes.goToPreviousDailyNote(),
         });
 
         this.addCommand({
-            id: "go-to-next-daily-note",
+            id: "daily-note-next",
             name: "Go to next daily note",
             callback: () => this.dailyNotes.goToNextDailyNote(),
         });
 
         this.addCommand({
-            id: "open-daily-note-on-date",
+            id: "daily-note-modal",
             name: "Open daily note on date",
             callback: () => this.dailyNotes.openDailyNoteModal(),
+        });
+
+        this.addCommand({
+            id: "daily-note-tomorrow",
+            name: "Open tomorrow's daily note (create if missing)",
+            callback: () => this.dailyNotes.createTomorrowDailyNote(),
+        });
+
+        this.addCommand({
+            id: "daily-note-today",
+            name: "Open today's daily note (create if missing)",
+            callback: () => this.dailyNotes.createDailyNoteForDate(),
         });
     }
 

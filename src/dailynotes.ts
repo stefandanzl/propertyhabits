@@ -194,12 +194,13 @@ export class DailyNotes {
 
     /**
      * Create (or open, if it already exists) the daily note for a specific date
-     * @param date - The day to create the note for
+     * @param date - The day to create the note for (defaults to today when omitted)
      * @param propertyName - Optional property to focus/flash after opening
      */
-    async createDailyNoteForDate(date: Moment, propertyName = "") {
-        const path = generateDailyNotePath(date, this.settings);
-        await this.createDailyNote(date.format("YYYY-MM-DD"), path, propertyName);
+    async createDailyNoteForDate(date?: Moment, propertyName = "") {
+        const targetDate = date ?? window.moment();
+        const path = generateDailyNotePath(targetDate, this.settings);
+        await this.createDailyNote(targetDate.format("YYYY-MM-DD"), path, propertyName);
     }
 
     /**
@@ -219,24 +220,26 @@ export class DailyNotes {
         const today = window.moment().startOf("day");
         const items: DailyNoteDateOption[] = [];
 
-        const addDay = (date: Moment) => {
+        const addDay = (date: Moment, marker = "") => {
             const path = generateDailyNotePath(date, this.settings);
             const exists = this.app.vault.getFileByPath(path) instanceof TFile;
             items.push({
                 date,
                 exists,
-                label: `${date.format("YYYY-MM-DD")} (${date.format("dddd")})${exists ? "" : " — missing, Enter to create"}`,
+                label: `${date.format("YYYY-MM-DD")} (${date.format("dddd")})${marker ? ` - ${marker}` : ""}${exists ? "" : " - missing, Enter to create"}`,
             });
         };
 
         // Today first (Enter on empty query opens today), then back a year,
         // then a month ahead for creating future notes
-        addDay(today.clone());
+        addDay(today.clone(), "TODAY");
         for (let offset = 1; offset <= 365; offset++) {
-            addDay(today.clone().subtract(offset, "days"));
+            addDay(today.clone().subtract(offset, "days"), offset === 1 ? "YESTERDAY" : "");
         }
+
+        // How many days into the future should be shown:
         for (let offset = 1; offset <= 30; offset++) {
-            addDay(today.clone().add(offset, "days"));
+            addDay(today.clone().add(offset, "days"), offset === 1 ? `TOMORROW (+${offset})` : `(+${offset})`);
         }
 
         new OpenDailyNoteModal(this.app, items, (item) => {

@@ -99,6 +99,16 @@ export class HabitSettingsTab extends PluginSettingTab {
             );
 
         new Setting(section)
+            .setName("Open side panel on status bar click")
+            .setDesc("Reveal the habit tracker side panel when clicking the status bar")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.statusBarClickOpensPanel).onChange(async (value) => {
+                    this.plugin.settings.statusBarClickOpensPanel = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(section)
             .setName("Advanced: Custom Daily Note Command")
             .setDesc(
                 'Define a custom Obsidian from your used daily notes plugin when clicking on status bar (e.g., "daily-notes", "smartsync:daily-note"). Leave empty to use default behavior. For a full list of commands run "this.app.commands.commands" in developer console.'

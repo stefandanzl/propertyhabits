@@ -29,6 +29,7 @@ export interface PluginSettings {
     showHabitStats: boolean;
     showFailuresRed: boolean;
     showNumberAsBattery: boolean;
+    statusBarClickOpensPanel: boolean;
     customDailyNoteCommand: string;
 }
 
@@ -92,6 +93,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     showHabitStats: true,
     showFailuresRed: true,
     showNumberAsBattery: true,
+    statusBarClickOpensPanel: true,
     customDailyNoteCommand: "",
 };
 
