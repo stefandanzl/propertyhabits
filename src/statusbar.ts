@@ -82,8 +82,18 @@ export class StatusBar {
         }
     }
 
+    /**
+     * Adds left padding to the status bar when a scroll offset is configured,
+     * visually separating the habit boxes from the element to their left
+     */
+    applyScrollPadding() {
+        this.plugin.statusBarItem?.toggleClass("has-scroll-offset", this.settings.scrollToOffset > 0);
+    }
+
     async updateStatusBar() {
         if (Platform.isMobile || !this.plugin.statusBarItem || !this.settings.showStatusBar) return;
+
+        this.applyScrollPadding();
 
         // Get active habits with targets and showInStatusBar enabled
         const habitsWithTargets = this.settings.trackedHabits.filter((h) => !h.ignored && h.target !== undefined && h.showInStatusBar);

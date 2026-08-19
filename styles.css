@@ -569,6 +569,10 @@
 	transition: opacity 0.2s ease;
 }
 
+.habit-tracker-status-bar.has-scroll-offset {
+	padding-left: 10px;
+}
+
 /* .habit-tracker-status-bar:hover {
     opacity: 0.8;
 } */

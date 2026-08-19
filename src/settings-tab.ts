@@ -99,6 +99,21 @@ export class HabitSettingsTab extends PluginSettingTab {
             );
 
         new Setting(section)
+            .setName("Scroll Offset on Daily Note Open")
+            .setDesc("Vertical scroll position in pixels when a daily note opens (0 = top, ~600 = past the properties block)")
+            .addSlider((slider) =>
+                slider
+                    .setLimits(0, 2000, 50)
+                    .setDynamicTooltip()
+                    .setValue(this.plugin.settings.scrollToOffset)
+                    .onChange(async (value) => {
+                        this.plugin.settings.scrollToOffset = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.statusBar.applyScrollPadding();
+                    })
+            );
+
+        new Setting(section)
             .setName("Open side panel on status bar click")
             .setDesc("Reveal the habit tracker side panel when clicking the status bar")
             .addToggle((toggle) =>

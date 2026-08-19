@@ -25,6 +25,7 @@ export interface PluginSettings {
     refreshInterval: number;
     scrollToTop: boolean;
     scrollToTopInterval: number;
+    scrollToOffset: number;
     showStatusBar: boolean;
     showHabitStats: boolean;
     showFailuresRed: boolean;
@@ -89,6 +90,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     refreshInterval: 1000,
     scrollToTop: true,
     scrollToTopInterval: 0,
+    scrollToOffset: 600,
     showStatusBar: true,
     showHabitStats: true,
     showFailuresRed: true,

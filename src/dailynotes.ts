@@ -61,10 +61,22 @@ export class DailyNotes {
         // Fallback behaviour
         if (propertyName === "") {
             console.log("No property name was provided");
-            leaf.setEphemeralState({
+       
+            if (this.settings.scrollToTop) {
+                setTimeout(() => {
+                    // Grab the editor from the *resolved* leaf — activeEditor may
+                    // still point at the previously-focused split during the
+                    // activation transition
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const editor = (leaf.view as any)?.editor;
+                    editor?.scrollTo(null, this.settings.scrollToOffset);
+                }, this.settings.scrollToTopInterval);
+            } else {
+                     leaf.setEphemeralState({
                 // Triggers the 'setState' branch to focus the PROPERTIES UI
                 focusMetadata: true,
             });
+            }
             return;
         }
         setTimeout(() => {
