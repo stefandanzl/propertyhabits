@@ -95,7 +95,12 @@ export class HabitDataProcessor {
             const filtered = Object.entries(allProperties)
                 .filter(([_, info]: [string, any]) => {
                     console.log(`[Habit Tracker] Property ${_}: type="${info.widget}"`);
-                    return info.widget === "checkbox" || info.widget === "number" || info.widget === "multitext";
+                    return (
+                        info.widget === "checkbox" ||
+                        info.widget === "number" ||
+                        info.widget === "multitext" ||
+                        info.widget === "text"
+                    );
                 })
                 .map(([name, info]: [string, any]) => ({
                     id: name,
@@ -114,5 +119,30 @@ export class HabitDataProcessor {
 
     isRelevantDailyNote(file: TFile): boolean {
         return file.path.startsWith(this.settings.baseDirectory) && file.extension === "md";
+    }
+
+    /**
+     * Collects every distinct value used for a frontmatter property across the
+     * whole vault (from the metadata cache — no disk reads). Used to offer
+     * selectable goal values that are guaranteed to actually occur.
+     */
+    getAvailablePropertyValues(propertyName: string): string[] {
+        const values = new Set<string>();
+        try {
+            for (const file of this.app.vault.getMarkdownFiles()) {
+                const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+                const raw = frontmatter?.[propertyName];
+                if (Array.isArray(raw)) {
+                    raw.forEach((v) => {
+                        if (typeof v === "string") values.add(v);
+                    });
+                } else if (typeof raw === "string") {
+                    values.add(raw);
+                }
+            }
+        } catch (error) {
+            handleError(`Error collecting values for property ${propertyName}`, error);
+        }
+        return Array.from(values).sort((a, b) => a.localeCompare(b));
     }
 }

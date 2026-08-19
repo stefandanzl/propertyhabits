@@ -4,6 +4,66 @@ import { HabitConfig } from "./types";
 import { HabitDataProcessor } from "./data-processor";
 import HabitTrackerPlugin from "main";
 
+/**
+ * Renders a scrollable checkbox list of available property values for picking
+ * goal values. Values are always selected from what actually occurs in the
+ * vault (verbatim matching) — a filter input appears for long lists.
+ */
+function renderGoalValuePicker(container: HTMLElement, availableValues: string[], initial: string[], onChange: (selected: string[]) => void) {
+    const selected = new Set(initial);
+
+    if (availableValues.length === 0) {
+        const empty = container.createDiv();
+        empty.setText("No values found for this property yet — add some in a note first.");
+        empty.addClass("mod-warning");
+        return;
+    }
+
+    const picker = container.createDiv("goal-values-picker");
+
+    let itemEls: Array<{ el: HTMLElement; value: string }> = [];
+    if (availableValues.length > 15) {
+        const filterInput = picker.createEl("input", { type: "text" });
+        filterInput.placeholder = "Filter values…";
+        filterInput.className = "goal-values-filter";
+        filterInput.oninput = () => {
+            const query = filterInput.value.toLowerCase();
+            itemEls.forEach(({ el, value }) => {
+                if (value.toLowerCase().includes(query)) {
+                    el.show();
+                } else {
+                    el.hide();
+                }
+            });
+        };
+    }
+
+    const list = picker.createDiv("goal-values-list");
+    itemEls = availableValues.map((value) => {
+        const item = list.createDiv("goal-value-item");
+        const checkbox = item.createEl("input", { type: "checkbox" });
+        checkbox.checked = selected.has(value);
+        const label = item.createSpan();
+        label.setText(value);
+
+        const update = () => {
+            if (checkbox.checked) {
+                selected.add(value);
+            } else {
+                selected.delete(value);
+            }
+            onChange(Array.from(selected));
+        };
+        checkbox.onclick = () => update();
+        item.onclick = (evt) => {
+            if (evt.target === checkbox) return;
+            checkbox.checked = !checkbox.checked;
+            update();
+        };
+        return { el: item, value };
+    });
+}
+
 export interface MissingNoteOption {
     action: "create" | "skip";
     label: string;
@@ -99,6 +159,8 @@ export class AddHabitModal extends Modal {
     sortMode: "alphabetical" | "frequency" | "first_occurrence" = "frequency";
     limitValues: number | undefined;
     multitextNoLabel = false;
+    evalMode: "count" | "goal" | "notempty" = "count";
+    goalValues: string[] = [];
     availableProperties: Array<{ name: string; type: string }> = [];
 
     // Container for dynamic fields
@@ -149,6 +211,7 @@ export class AddHabitModal extends Modal {
                     this.selectedProperty = untrackedProperties[0].name;
                     this.selectedPropertyType = untrackedProperties[0].type;
                     this.displayName = untrackedProperties[0].name;
+                    this.evalMode = this.selectedPropertyType === "text" ? "notempty" : "count";
                     dropdown.setValue(untrackedProperties[0].name);
                 }
 
@@ -157,6 +220,10 @@ export class AddHabitModal extends Modal {
                 dropdown.onChange((value) => {
                     this.selectedProperty = value;
                     this.displayName = value;
+                    // Goal values belong to the previously selected property
+                    this.goalValues = [];
+                    // Reset the evaluation mode to the new property's default
+                    this.evalMode = this.selectedPropertyType === "text" ? "notempty" : "count";
                     // Find the selected property type
                     const selectedProp = untrackedProperties.find((p) => p.name === value);
                     if (selectedProp) {
@@ -234,6 +301,29 @@ export class AddHabitModal extends Modal {
         if (this.selectedPropertyType === "checkbox") {
             // Checkbox habits always have target = 1 (checked for success)
             this.target = 1;
+        } else if (this.selectedPropertyType === "text") {
+            // Text habits: success by any non-empty value or by exact goal values
+            new Setting(this.dynamicFieldsContainer)
+                .setName("Success evaluation")
+                .setDesc("How success is determined for this habit")
+                .addDropdown((dropdown) => {
+                    dropdown.addOption("notempty", "Not empty (any value)");
+                    dropdown.addOption("goal", "Actual goal values");
+                    dropdown.setValue(this.evalMode === "goal" ? "goal" : "notempty");
+                    dropdown.onChange((value) => {
+                        this.evalMode = value as "notempty" | "goal";
+                        this.renderDynamicFields();
+                    });
+                });
+
+            if (this.evalMode === "goal") {
+                new Setting(this.dynamicFieldsContainer)
+                    .setName("Goal values")
+                    .setDesc("The day counts as done when the property matches one of the selected values (verbatim)");
+                renderGoalValuePicker(this.dynamicFieldsContainer, this.dataProcessor.getAvailablePropertyValues(this.selectedProperty), this.goalValues, (selected) => {
+                    this.goalValues = selected;
+                });
+            }
         } else if (this.selectedPropertyType === "number") {
             // Number-specific fields
             new Setting(this.dynamicFieldsContainer)
@@ -257,7 +347,7 @@ export class AddHabitModal extends Modal {
                     });
                 });
         } else if (this.selectedPropertyType === "multitext") {
-            // Multitext-specific fields
+            // Multitext-specific fields — display settings first, evaluation last
             // Sort mode setting (create first so we can reference it)
             this.sortModeSetting = new Setting(this.dynamicFieldsContainer)
                 .setName("Sort mode")
@@ -303,26 +393,50 @@ export class AddHabitModal extends Modal {
                     });
                 });
 
+            // How success is determined: by item count or by a required value set
             new Setting(this.dynamicFieldsContainer)
-                .setName("Target")
-                .setDesc("Minimum number of list items required (leave empty for no target), e.g. '3' for 3 list items")
-                .addText((text) => {
-                    text.setPlaceholder("3");
-                    text.onChange((value) => {
-                        const num = Number(value);
-                        this.target = this.plugin.checkNaN(num) ? undefined : num;
+                .setName("Success evaluation")
+                .setDesc("How success is determined for this habit")
+                .addDropdown((dropdown) => {
+                    dropdown.addOption("count", "Value count");
+                    dropdown.addOption("goal", "Actual goal values");
+                    dropdown.setValue(this.evalMode === "goal" ? "goal" : "count");
+                    dropdown.onChange((value) => {
+                        this.evalMode = value as "count" | "goal";
+                        this.renderDynamicFields();
                     });
                 });
 
-            new Setting(this.dynamicFieldsContainer)
-                .setName("Total target")
-                .setDesc("Whether the target is total over the period (vs daily target)")
-                .addToggle((toggle) => {
-                    toggle.setValue(this.isTotal);
-                    toggle.onChange((value) => {
-                        this.isTotal = value;
-                    });
+            if (this.evalMode === "goal") {
+                new Setting(this.dynamicFieldsContainer)
+                    .setName("Goal values")
+                    .setDesc("The day is done when ALL selected values are present (verbatim)");
+                renderGoalValuePicker(this.dynamicFieldsContainer, this.dataProcessor.getAvailablePropertyValues(this.selectedProperty), this.goalValues, (selected) => {
+                    this.goalValues = selected;
                 });
+            } else {
+                new Setting(this.dynamicFieldsContainer)
+                    .setName("Target")
+                    .setDesc("Minimum number of list items required (leave empty for no target), e.g. '3' for 3 list items")
+                    .addText((text) => {
+                        text.setPlaceholder("3");
+                        text.setValue(this.target?.toString() || "");
+                        text.onChange((value) => {
+                            const num = Number(value);
+                            this.target = this.plugin.checkNaN(num) ? undefined : num;
+                        });
+                    });
+
+                new Setting(this.dynamicFieldsContainer)
+                    .setName("Total target")
+                    .setDesc("Whether the target is total over the period (vs daily target)")
+                    .addToggle((toggle) => {
+                        toggle.setValue(this.isTotal);
+                        toggle.onChange((value) => {
+                            this.isTotal = value;
+                        });
+                    });
+            }
         }
     }
 
@@ -341,7 +455,7 @@ export class AddHabitModal extends Modal {
         const result: HabitConfig = {
             propertyName: this.selectedProperty,
             displayName: this.displayName,
-            widget: selectedProp.type as "checkbox" | "number" | "multitext",
+            widget: selectedProp.type as "checkbox" | "number" | "multitext" | "text",
             target: this.target,
             isTotal: this.isTotal,
             order: 0, // Will be set by the calling code
@@ -350,6 +464,15 @@ export class AddHabitModal extends Modal {
             sortMode: this.sortMode,
             limitValues: this.limitValues,
             multitextNoLabel: this.multitextNoLabel,
+            goalValues: this.goalValues,
+            evalMode:
+                this.selectedPropertyType === "multitext"
+                    ? this.evalMode === "goal"
+                        ? "goal"
+                        : "count"
+                    : this.evalMode === "goal"
+                      ? "goal"
+                      : "notempty",
         };
 
         this.close();
@@ -390,12 +513,56 @@ export class EditHabitModal extends Modal {
                 });
             });
 
+        // Show in status bar — placement varies by widget: before the
+        // evaluation settings for multitext/text, at the bottom for others
+        const renderShowInStatusBar = () => {
+            new Setting(this.contentEl)
+                .setName("Show in status bar")
+                .setDesc("Display this habit in the status bar indicator")
+                .addToggle((toggle) => {
+                    toggle.setValue(this.habit.showInStatusBar);
+                    toggle.onChange((value) => {
+                        this.habit.showInStatusBar = value;
+                    });
+                });
+        };
+
+        // Rebuilds the modal content when the evaluation mode changes
+        const rebuild = () => {
+            this.contentEl.empty();
+            this.onOpen();
+        };
+
         // Render fields based on widget type
         if (this.habit.widget === "checkbox") {
             // Checkbox habits always have target = 1 (checked for success)
             // Ensure target is set to 1 if it's not already
             if (this.habit.target === undefined) {
                 this.habit.target = 1;
+            }
+        } else if (this.habit.widget === "text") {
+            renderShowInStatusBar();
+
+            new Setting(this.contentEl)
+                .setName("Success evaluation")
+                .setDesc("How success is determined for this habit")
+                .addDropdown((dropdown) => {
+                    dropdown.addOption("notempty", "Not empty (any value)");
+                    dropdown.addOption("goal", "Actual goal values");
+                    dropdown.setValue(this.habit.evalMode || "goal");
+                    dropdown.onChange((value) => {
+                        this.habit.evalMode = value as "notempty" | "goal";
+                        rebuild();
+                    });
+                });
+
+            if (this.habit.evalMode !== "notempty") {
+                new Setting(this.contentEl)
+                    .setName("Goal values")
+                    .setDesc("The day counts as done when the property matches one of the selected values (verbatim)");
+                renderGoalValuePicker(this.contentEl, this.plugin.dataProcessor.getAvailablePropertyValues(this.habit.propertyName), this.habit.goalValues ?? [], (selected) => {
+                    this.habit.goalValues = selected;
+                });
             }
         } else if (this.habit.widget === "number") {
             // Number-specific fields
@@ -421,7 +588,7 @@ export class EditHabitModal extends Modal {
                     });
                 });
         } else if (this.habit.widget === "multitext") {
-            // Multitext-specific fields
+            // Multitext-specific fields — display settings first, evaluation last
             // Sort mode setting (create first so we can reference it)
             this.sortModeSetting = new Setting(this.contentEl)
                 .setName("Sort mode")
@@ -468,40 +635,59 @@ export class EditHabitModal extends Modal {
                     });
                 });
 
+            renderShowInStatusBar();
+
+            // How success is determined: by item count or by a required value set
             new Setting(this.contentEl)
-                .setName("Target")
-                .setDesc("Minimum number of list items required (leave empty for no target)")
-                .addText((text) => {
-                    text.setValue(this.habit.target?.toString() || "");
-                    text.setPlaceholder("3");
-                    text.onChange((value) => {
-                        if (value == undefined) return;
-                        const num = Number(value);
-                        this.habit.target = this.plugin.checkNaN(num) ? undefined : num;
+                .setName("Success evaluation")
+                .setDesc("How success is determined for this habit")
+                .addDropdown((dropdown) => {
+                    dropdown.addOption("count", "Value count");
+                    dropdown.addOption("goal", "Actual goal values");
+                    dropdown.setValue(this.habit.evalMode || "count");
+                    dropdown.onChange((value) => {
+                        this.habit.evalMode = value as "count" | "goal";
+                        rebuild();
                     });
                 });
 
-            new Setting(this.contentEl)
-                .setName("Total target")
-                .setDesc("Whether the target is total over the period (vs daily target)")
-                .addToggle((toggle) => {
-                    toggle.setValue(this.habit.isTotal);
-                    toggle.onChange((value) => {
-                        this.habit.isTotal = value;
-                    });
+            if (this.habit.evalMode === "goal") {
+                new Setting(this.contentEl)
+                    .setName("Goal values")
+                    .setDesc("The day is done when ALL selected values are present (verbatim)");
+                renderGoalValuePicker(this.contentEl, this.plugin.dataProcessor.getAvailablePropertyValues(this.habit.propertyName), this.habit.goalValues ?? [], (selected) => {
+                    this.habit.goalValues = selected;
                 });
+            } else {
+                new Setting(this.contentEl)
+                    .setName("Target")
+                    .setDesc("Minimum number of list items required (leave empty for no target)")
+                    .addText((text) => {
+                        text.setValue(this.habit.target?.toString() || "");
+                        text.setPlaceholder("3");
+                        text.onChange((value) => {
+                            if (value == undefined) return;
+                            const num = Number(value);
+                            this.habit.target = this.plugin.checkNaN(num) ? undefined : num;
+                        });
+                    });
+
+                new Setting(this.contentEl)
+                    .setName("Total target")
+                    .setDesc("Whether the target is total over the period (vs daily target)")
+                    .addToggle((toggle) => {
+                        toggle.setValue(this.habit.isTotal);
+                        toggle.onChange((value) => {
+                            this.habit.isTotal = value;
+                        });
+                    });
+            }
         }
 
-        // Show in status bar (common setting for all habits)
-        new Setting(this.contentEl)
-            .setName("Show in status bar")
-            .setDesc("Display this habit in the status bar indicator")
-            .addToggle((toggle) => {
-                toggle.setValue(this.habit.showInStatusBar);
-                toggle.onChange((value) => {
-                    this.habit.showInStatusBar = value;
-                });
-            });
+        // Show in status bar (common setting for checkbox/number habits)
+        if (this.habit.widget === "checkbox" || this.habit.widget === "number") {
+            renderShowInStatusBar();
+        }
 
         // Buttons
         new Setting(this.contentEl)

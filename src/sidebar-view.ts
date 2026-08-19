@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf, Notice, TFile, moment, MarkdownView } from "obsidian";
 import { VIEW_TYPE_HABIT_TRACKER, TIME_SPANS, HabitData, HabitStats, HabitConfig } from "./types";
 import { HabitDataProcessor } from "./data-processor";
-import { calculateHabitStats, getSuccessClass, extractMultitextValues, hasMultitextValue, extractOrderedMultitextValues } from "./utils";
+import { calculateHabitStats, getSuccessClass, extractMultitextValues, hasMultitextValue, extractOrderedMultitextValues, countGoalMatches } from "./utils";
 import type HabitTrackerPlugin from "./main";
 
 export class HabitSidebarView extends ItemView {
@@ -151,7 +151,10 @@ export class HabitSidebarView extends ItemView {
                     statsEl.setText(`Avg: ${avgDisplay}/${habit.target} (${stats.targetAchievement}%) - target: ${habit.target}`);
                 }
             } else if (habit.widget === "multitext") {
-                if (habit.target) {
+                if (habit.evalMode === "goal") {
+                    const goalList = (habit.goalValues ?? []).join(", ");
+                    statsEl.setText(`Goal: ${stats.targetAchievement ?? 0}% avg - ${goalList}`);
+                } else if (habit.target) {
                     if (habit.isTotal) {
                         statsEl.setText(`Total: ${stats.totalValue}/${habit.target} items (${stats.targetAchievement}%) - target: ${habit.target}`);
                     } else {
@@ -166,6 +169,9 @@ export class HabitSidebarView extends ItemView {
                         statsEl.setText(`Avg: ${avgDisplay} items`);
                     }*/
                 }
+            } else if (habit.widget === "text") {
+                const goalList = (habit.goalValues ?? []).join(", ");
+                statsEl.setText(`${stats.successfulDays}/${stats.totalDays} (${stats.successRate}%)${goalList ? ` - goal: ${goalList}` : ""}`);
             }
         }
 
@@ -308,6 +314,29 @@ export class HabitSidebarView extends ItemView {
                             indicator.ariaLabel = `${day.date}: ${numValue} (no target)`;
                         }
                     }
+                }
+            } else if (habit.widget === "text") {
+                const textValue = typeof value === "string" ? value : null;
+                let isSuccess: boolean;
+                if (habit.evalMode === "notempty") {
+                    // Any non-empty value counts as success
+                    isSuccess = textValue !== null && textValue.length > 0;
+                } else {
+                    // Exact match against the configured goal values
+                    const goalValues = habit.goalValues ?? [];
+                    isSuccess = goalValues.length > 0 && textValue !== null && countGoalMatches([textValue], goalValues) > 0;
+                }
+
+                if (day.exists) {
+                    if (isSuccess) {
+                        indicator.addClass("success");
+                    } else {
+                        indicator.addClass("failure");
+                    }
+                    indicator.ariaLabel = `${day.date}: ${textValue ?? "No data"}`;
+                } else {
+                    indicator.addClass("missing");
+                    indicator.ariaLabel = `${day.date}: No file - Double click to create note`;
                 }
             } else if (habit.widget === "checkbox") {
                 const boolValue = value as boolean;

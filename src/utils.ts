@@ -6,7 +6,7 @@ export function handleError(message: string, context?: unknown) {
     // Note: Notice creation should be done from the plugin context
 }
 
-export function processPropertyValue(widget: string, rawValue: unknown): boolean | number | null {
+export function processPropertyValue(widget: string, rawValue: unknown): boolean | number | string | null {
     // Handle undefined/null values - these mean the property doesn't exist in the note
     if (rawValue === undefined || rawValue === null) {
         if (widget === "number" || widget === "multitext") {
@@ -38,10 +38,25 @@ export function processPropertyValue(widget: string, rawValue: unknown): boolean
             handleError(`Invalid multitext value: ${rawValue}`);
             return 0;
 
+        case "text":
+            if (typeof rawValue === "string") return rawValue.trim();
+            handleError(`Invalid text value: ${rawValue}`);
+            return null;
+
         default:
             handleError(`Unsupported widget type: ${widget}`);
             return null;
     }
+}
+
+/**
+ * Counts how many of the goal values are present in the day's values
+ * (verbatim, case-sensitive comparison — goal values should be picked from
+ * the values that actually occur in the vault, not typed freehand)
+ */
+export function countGoalMatches(dayValues: string[] | undefined, goalValues: string[]): number {
+    if (!dayValues || goalValues.length === 0) return 0;
+    return goalValues.filter((goal) => dayValues.includes(goal)).length;
 }
 
 export function generateDailyNotePath(momentDate: Moment, settings: PluginSettings): string {
@@ -83,6 +98,10 @@ export function calculateHabitStats(habitData: HabitData, habitConfig: HabitConf
     let forwardTotalValue = 0;
     const dailySuccessResults: boolean[] = new Array(habitData.length);
 
+    // Goal-based evaluation accumulators (multitext goal mode / text habits)
+    let goalRatioSum = 0;
+    let goalDays = 0;
+
     // First pass: calculate daily success/failure going forward
     for (let i = 0; i < habitData.length; i++) {
         const value = habitData[i]?.habits[habitName];
@@ -95,7 +114,27 @@ export function calculateHabitStats(habitData: HabitData, habitConfig: HabitConf
         if (value !== null && value !== undefined) {
             validValues++;
 
-            if (habitConfig.widget === "checkbox") {
+            if (habitConfig.widget === "text") {
+                if (habitConfig.evalMode === "notempty") {
+                    // Any non-empty value counts as success
+                    isSuccess = typeof value === "string" && value.length > 0;
+                } else {
+                    // Exact match against the configured acceptable values
+                    const goalValues = habitConfig.goalValues ?? [];
+                    isSuccess = goalValues.length > 0 && countGoalMatches([String(value)], goalValues) > 0;
+                }
+                if (isSuccess) totalValue += 1;
+            } else if (habitConfig.widget === "multitext" && habitConfig.evalMode === "goal") {
+                // Success = all goal values present; partial matches feed the ratio
+                const goalValues = habitConfig.goalValues ?? [];
+                if (goalValues.length > 0) {
+                    const matched = countGoalMatches(habitData[i]?.multitextValues?.[habitName], goalValues);
+                    goalRatioSum += matched / goalValues.length;
+                    goalDays++;
+                    totalValue += matched;
+                    isSuccess = matched === goalValues.length;
+                }
+            } else if (habitConfig.widget === "checkbox") {
                 const boolValue = value as boolean;
 
                 const targetIsChecked = (habitConfig.target || 1) === 1;
@@ -165,7 +204,12 @@ export function calculateHabitStats(habitData: HabitData, habitConfig: HabitConf
     const averageValue = validValues > 0 ? totalValue / validValues : undefined;
 
     let targetAchievement: number | undefined;
-    if (habitConfig.widget === "number" && habitConfig.target) {
+    if (habitConfig.widget === "multitext" && habitConfig.evalMode === "goal" && goalDays > 0) {
+        // Average share of the goal set achieved per day
+        targetAchievement = Math.round((goalRatioSum / goalDays) * 100);
+    } else if (habitConfig.widget === "text") {
+        targetAchievement = successRate;
+    } else if (habitConfig.widget === "number" && habitConfig.target) {
         if (habitConfig.isTotal) {
             targetAchievement = Math.round((totalValue / habitConfig.target) * 100);
         } else {

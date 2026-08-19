@@ -573,6 +573,41 @@
 	padding-left: 10px;
 }
 
+/* Goal value picker in Add/Edit habit modals */
+.goal-values-picker {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-height: 180px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 6px;
+	margin: 6px 0 12px 0;
+}
+
+.goal-values-filter {
+	width: 100%;
+}
+
+.goal-values-list {
+	display: flex;
+	flex-direction: column;
+}
+
+.goal-value-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 3px 6px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.goal-value-item:hover {
+	background: var(--background-modifier-hover);
+}
+
 /* .habit-tracker-status-bar:hover {
     opacity: 0.8;
 } */

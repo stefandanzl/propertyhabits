@@ -3,7 +3,7 @@
 export interface HabitConfig {
     propertyName: string;
     displayName: string;
-    widget: "checkbox" | "number" | "multitext";
+    widget: "checkbox" | "number" | "multitext" | "text";
     target?: number;
     isTotal: boolean;
     order: number;
@@ -13,6 +13,9 @@ export interface HabitConfig {
     sortMode?: "alphabetical" | "frequency" | "first_occurrence";
     limitValues?: number;
     multitextNoLabel?: boolean; // When true, values are displayed in order without a label column
+    // Goal-based success (instead of count targets)
+    goalValues?: string[]; // multitext: required value set; text: acceptable exact values
+    evalMode?: "count" | "goal" | "notempty"; // multitext: count | goal; text: notempty | goal
 }
 
 export interface PluginSettings {
@@ -35,7 +38,7 @@ export interface PluginSettings {
 }
 
 export interface Habits {
-    [habitName: string]: boolean | number | null;
+    [habitName: string]: boolean | number | string | null;
 }
 
 export interface DayData {

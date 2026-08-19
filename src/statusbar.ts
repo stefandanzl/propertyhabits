@@ -2,7 +2,7 @@ import HabitTrackerPlugin from "main";
 import { App, Notice, Platform, TFile, moment } from "obsidian";
 import { HabitSettingsTab } from "settings-tab";
 import { HabitConfig, PluginSettings } from "types";
-import { generateDailyNotePath, processPropertyValue } from "utils";
+import { generateDailyNotePath, processPropertyValue, countGoalMatches } from "utils";
 
 interface Commands {
     executeCommandById(id: string): boolean;
@@ -117,6 +117,7 @@ export class StatusBar {
             box.dataset.propertyName = habit.propertyName;
 
             let isDone = false;
+            let goalSuffix = "";
 
             if (file && file instanceof TFile) {
                 // File exists, check the actual value
@@ -125,7 +126,16 @@ export class StatusBar {
                     const rawValue = metadata?.frontmatter?.[habit.propertyName];
                     const value = processPropertyValue(habit.widget, rawValue);
 
-                    isDone = this.checkHabitDone(habit, value);
+                    isDone = this.checkHabitDone(habit, value, rawValue);
+
+                    // Partial-goal percentage for the tooltip, e.g. "- 2/3 (67%)"
+                    if (habit.widget === "multitext" && habit.evalMode === "goal" && habit.goalValues && habit.goalValues.length > 0) {
+                        const matched = countGoalMatches(Array.isArray(rawValue) ? (rawValue as string[]) : undefined, habit.goalValues);
+                        if (matched < habit.goalValues.length) {
+                            const pct = Math.round((matched / habit.goalValues.length) * 100);
+                            goalSuffix = ` - ${matched}/${habit.goalValues.length} (${pct}%)`;
+                        }
+                    }
                 } catch {
                     isDone = false;
                 }
@@ -138,27 +148,40 @@ export class StatusBar {
                 box.setAttribute("data-tooltip-position", "top");
             } else {
                 box.addClass(isDone ? "habit-done" : "habit-undone");
-                box.ariaLabel = `${habit.displayName}: ${isDone ? "Done" : "Not done"}`;
+                box.ariaLabel = `${habit.displayName}: ${isDone ? "Done" : "Not done"}${goalSuffix}`;
                 box.setAttribute("data-tooltip-position", "top");
             }
         }
     }
 
-    checkHabitDone(habit: HabitConfig, value: boolean | number | null): boolean {
-        if (habit.target === undefined) return false;
-
+    checkHabitDone(habit: HabitConfig, value: boolean | number | string | null, rawValue?: unknown): boolean {
         switch (habit.widget) {
             case "checkbox":
+                if (habit.target === undefined) return false;
                 const targetIsChecked = habit.target === 1;
                 return value === targetIsChecked;
 
             case "number":
+                if (habit.target === undefined) return false;
                 const numValue = typeof value === "number" ? value : 0;
                 return numValue >= habit.target;
 
             case "multitext":
+                // Goal mode: all goal values must be present
+                if (habit.evalMode === "goal" && habit.goalValues && habit.goalValues.length > 0) {
+                    const dayValues = Array.isArray(rawValue) ? (rawValue as string[]) : undefined;
+                    return countGoalMatches(dayValues, habit.goalValues) === habit.goalValues.length;
+                }
+                if (habit.target === undefined) return false;
                 const countValue = typeof value === "number" ? value : 0;
                 return countValue >= habit.target;
+
+            case "text":
+                if (habit.evalMode === "notempty") {
+                    return typeof value === "string" && value.length > 0;
+                }
+                if (value === null || value === undefined) return false;
+                return countGoalMatches([String(value)], habit.goalValues ?? []) > 0;
 
             default:
                 return false;
